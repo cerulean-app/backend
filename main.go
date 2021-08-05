@@ -9,14 +9,20 @@ import (
 	"time"
 
 	"github.com/gorilla/handlers"
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
-	"go.mongodb.org/mongo-driver/mongo/readpref"
 )
 
+var config Config
+var mongodb *mongo.Client
+var database *mongo.Database
+var mongoCtx *context.Context
+
 type Config struct {
-	Port     int    `json:"port"`
-	MongoUri string `json:"mongoUri"`
+	Port      int    `json:"port"`
+	MongoUri  string `json:"mongoUri"`
+	JwtSecret string `json:"jwtSecret"`
 }
 
 func main() {
@@ -25,27 +31,28 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	var config Config
 	err = json.Unmarshal(configFile, &config)
 	if err != nil {
 		panic(err)
 	}
 	// Connect to MongoDB.
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	mongoCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	client, err := mongo.Connect(ctx, options.Client().ApplyURI(config.MongoUri))
+	mongodb, err = mongo.Connect(mongoCtx, options.Client().ApplyURI(config.MongoUri))
 	if err != nil {
 		panic(err)
 	}
 	defer func() {
-		if err = client.Disconnect(ctx); err != nil {
+		if err = mongodb.Disconnect(mongoCtx); err != nil {
 			panic(err)
 		}
 	}()
-	// Ping the primary MongoDB server to ensure the connection is good.
-	if err := client.Ping(ctx, readpref.Primary()); err != nil {
-		panic(err)
-	}
+
+	// Define MongoDB schemas.
+	database = mongodb.Database("cerulean")
+	database.CreateCollection(mongoCtx, "users", &options.CreateCollectionOptions{
+		Validator: bson.M{"$jsonSchema": UsersCollectionSchema},
+	})
 	fmt.Println("Successfully connected to MongoDB.")
 
 	// Create CORS handler wrapper.
@@ -57,6 +64,7 @@ func main() {
 	http.Handle("/", corsHandlerWrapper(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(`{"message":"Hello, World!"}`))
 	})))
+	http.Handle("/login", corsHandlerWrapper(http.HandlerFunc(loginHandler)))
 
 	// Start listening on specified port.
 	fmt.Println("Listening on port", config.Port)
