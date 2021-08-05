@@ -1,6 +1,10 @@
 package main
 
-import "go.mongodb.org/mongo-driver/bson"
+import (
+	"time"
+
+	"go.mongodb.org/mongo-driver/bson"
+)
 
 var UsersCollectionSchema = bson.M{
 	"required": []string{"username", "email", "password"},
@@ -30,4 +34,19 @@ type UsersCollectionDocument struct {
 	Password string `json:"password" bson:"password"`
 	Salt     string `json:"salt" bson:"salt"`
 	Email    string `json:"email" bson:"email"`
+}
+
+var TokensCollectionSchema = bson.M{
+	"required": []string{"username", "accessToken", "issuedOn"},
+	"properties": bson.M{
+		"token":    bson.M{"bsonType": "string", "minLength": 42},
+		"username": bson.M{"bsonType": "string", "minLength": 4},
+		"issuedOn": bson.M{"bsonType": "date"},
+	},
+}
+
+type TokensCollectionDocument struct {
+	Username string    `json:"username" bson:"username"`
+	IssuedOn time.Time `json:"issuedOn" bson:"issuedOn"`
+	Token    string    `json:"token" bson:"token"`
 }

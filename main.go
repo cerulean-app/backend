@@ -20,9 +20,8 @@ var database *mongo.Database
 var mongoCtx *context.Context
 
 type Config struct {
-	Port      int    `json:"port"`
-	MongoUri  string `json:"mongoUri"`
-	JwtSecret string `json:"jwtSecret"`
+	Port     int    `json:"port"`
+	MongoUri string `json:"mongoUri"`
 }
 
 func main() {
@@ -52,6 +51,9 @@ func main() {
 	database = mongodb.Database("cerulean")
 	database.CreateCollection(mongoCtx, "users", &options.CreateCollectionOptions{
 		Validator: bson.M{"$jsonSchema": UsersCollectionSchema},
+	})
+	database.CreateCollection(mongoCtx, "tokens", &options.CreateCollectionOptions{
+		Validator: bson.M{"$jsonSchema": TokensCollectionSchema},
 	})
 	fmt.Println("Successfully connected to MongoDB.")
 

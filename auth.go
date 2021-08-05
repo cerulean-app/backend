@@ -1,12 +1,13 @@
 package main
 
 import (
+	"crypto/rand"
+	"encoding/base64"
 	"encoding/json"
 	"io"
 	"net/http"
 	"time"
 
-	"github.com/golang-jwt/jwt"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"golang.org/x/crypto/argon2"
@@ -16,13 +17,13 @@ func hashPassword(password string, salt string) string {
 	return string(argon2.IDKey([]byte(password), []byte(salt), 1, 8*1024, 4, 32))
 }
 
-type JwtClaims struct {
-	Username string `json:"username"`
-	jwt.StandardClaims
-}
-
-func createJwt(claims JwtClaims) (string, error) {
-	return jwt.NewWithClaims(jwt.SigningMethodHS256, claims).SignedString(config.JwtSecret)
+func generateToken() (string, error) {
+	token := make([]byte, 32)
+	_, err := rand.Read(token)
+	if err != nil {
+		return "", err
+	}
+	return base64.RawStdEncoding.EncodeToString(token), nil
 }
 
 type LoginData struct {
@@ -61,15 +62,49 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "{\"error\":\"Invalid username or password!\"}", http.StatusUnauthorized)
 		return
 	}
-	jwt, err := createJwt(JwtClaims{
-		Username:       user.Username,
-		StandardClaims: jwt.StandardClaims{ExpiresAt: time.Now().Add(time.Hour * 24 * 365).Unix()},
+	token, err := generateToken()
+	if err != nil {
+		http.Error(w, "{\"error\":\"Internal Server Error!\"}", http.StatusInternalServerError)
+		return
+	}
+	_, err = database.Collection("tokens").InsertOne(*mongoCtx, bson.M{
+		"token":    token,
+		"username": loginData.Username,
+		"issuedOn": time.Now().UTC(),
 	})
 	if err != nil {
 		http.Error(w, "{\"error\":\"Internal Server Error!\"}", http.StatusInternalServerError)
 		return
 	}
 	// TODO: Add Secure to cookie.
-	w.Header().Add("Set-Cookie", "cerulean-token="+jwt+"; HttpOnly; SameSite=Lax; Max-Age=31536000")
-	json.NewEncoder(w).Encode(map[string]string{"token": jwt})
+	r.AddCookie(&http.Cookie{
+		Name:     "cerulean-token",
+		Value:    token,
+		HttpOnly: true,
+		SameSite: http.SameSiteLaxMode,
+		MaxAge:   31536000,
+	})
+	json.NewEncoder(w).Encode(map[string]string{"token": token})
+}
+
+func isLoggedIn(r *http.Request) (string, error) { // TODO: IssuedOn expiry.
+	cookie, err := r.Cookie("cerulean-token")
+	var token string
+	if err == http.ErrNoCookie {
+		token = r.Header.Get("Authorization")
+	} else {
+		token = cookie.Value
+	}
+	if token == "" {
+		return "", nil
+	}
+	result := database.Collection("tokens").FindOne(*mongoCtx, bson.M{"token": token})
+	if result.Err() == mongo.ErrNoDocuments {
+		return "", nil
+	} else if result.Err() != nil {
+		return "", err
+	}
+	var document TokensCollectionDocument
+	result.Decode(&document)
+	return document.Username, nil
 }
