@@ -2,10 +2,11 @@
 
 **This REST API is still a work in progress!** Some endpoints and features have not been finalised. If you are writing a Cerulean client, you will need to keep track of the current API until beta versions are released. Additionally, some of these endpoints have not yet been implemented in the back-end.
 
+- Password length/security validation.
+- Todo ordering endpoints.
 - Multiple to-do lists.
 - `POST /register`
 - `POST /verifyuser`
-- `POST /changepassword`
 - `DELETE /todo/:id`
 - `PATCH /todo/:id`
 - `GET /todo/:id`
@@ -46,6 +47,25 @@ Logout and invaliate the current token.
 | N/A
 
 ### [Response](#post-logout-response)
+
+```json
+{
+  "success": true
+}
+```
+
+## [POST /changepassword](#post-changepassword)
+
+Change your current user's password. This also invalidates all tokens except your current one.
+
+### [Parameters](#post-changepassword-parameters)
+
+| Name              | Type   | In   | Description                       |
+| ----------------- | ------ | ---- | --------------------------------- |
+| `currentPassword` | string | body | The old password.                 |
+| `newPassword`     | string | body | The new password you wish to set. |
+
+### [Response](#post-changepassword-response)
 
 ```json
 {

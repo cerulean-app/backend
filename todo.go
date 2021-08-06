@@ -18,7 +18,7 @@ type TodoData struct {
 	DueDate     string `json:"dueDate"`
 }
 
-func todoHandler(w http.ResponseWriter, r *http.Request, username string) {
+func todoHandler(w http.ResponseWriter, r *http.Request, username string, token string) {
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
 		http.Error(w, "{\"error\":\"Invalid body sent!\"}", http.StatusBadRequest)
@@ -50,7 +50,7 @@ func todoHandler(w http.ResponseWriter, r *http.Request, username string) {
 			return
 		}
 	}
-	result, err := database.Collection("Users").UpdateOne(*mongoCtx, bson.M{"username": username}, bson.M{
+	result, err := database.Collection("users").UpdateOne(*mongoCtx, bson.M{"username": username}, bson.M{
 		"$push": bson.M{"todos": todoDocument},
 	})
 	if err != nil || result.MatchedCount != 1 {

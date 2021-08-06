@@ -63,12 +63,12 @@ func main() {
 		handlers.AllowedMethods([]string{"GET", "POST", "PUT", "HEAD", "OPTIONS", "PATCH", "DELETE"}),
 		handlers.AllowedOrigins([]string{"*"}),
 	)
-	http.Handle("/", cors(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte(`{"message":"Hello, World!"}`))
-	})))
+	// Authentication endpoints.
 	http.Handle("/login", cors(http.HandlerFunc(loginHandler)))
 	http.Handle("/logout", cors(http.HandlerFunc(logoutHandler)))
-	http.Handle("/todo", cors(http.HandlerFunc(handleLoginCheck(todoHandler))))
+	http.Handle("/changepassword", cors(http.HandlerFunc(handleLoginCheck(changePasswordHandler, []string{"POST"}))))
+	// Data endpoints.
+	http.Handle("/todo", cors(http.HandlerFunc(handleLoginCheck(todoHandler, []string{"POST"}))))
 
 	// Start listening on specified port.
 	fmt.Println("Listening on port", config.Port)
