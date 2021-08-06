@@ -53,7 +53,7 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// Hash and check the password.
-	var user UsersCollectionDocument
+	var user UserDocument
 	err = result.Decode(&user)
 	if err != nil {
 		http.Error(w, "{\"error\":\"Internal Server Error!\"}", http.StatusInternalServerError)
@@ -76,19 +76,34 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "{\"error\":\"Internal Server Error!\"}", http.StatusInternalServerError)
 		return
 	}
-	// TODO: Add Secure to cookie.
-	r.AddCookie(&http.Cookie{
-		Name:     "cerulean-token",
-		Value:    token,
-		HttpOnly: true,
-		SameSite: http.SameSiteLaxMode,
-		MaxAge:   31536000,
-	})
+	if r.URL.Query().Get("cookie") != "false" {
+		// TODO: Add Secure to cookie.
+		r.AddCookie(&http.Cookie{
+			Name:     "cerulean_token",
+			Value:    token,
+			HttpOnly: true,
+			SameSite: http.SameSiteLaxMode,
+			MaxAge:   31536000,
+		})
+	}
 	json.NewEncoder(w).Encode(map[string]string{"token": token})
 }
 
-func isLoggedIn(r *http.Request) (string, error) { // TODO: IssuedOn expiry.
-	cookie, err := r.Cookie("cerulean-token")
+func isLoggedIn(token string) (string, error) { // TODO: IssuedOn expiry.
+	result := database.Collection("tokens").FindOne(*mongoCtx, bson.M{"token": token})
+	if result.Err() == mongo.ErrNoDocuments {
+		return "", nil
+	} else if result.Err() != nil {
+		return "", result.Err()
+	}
+	var document TokenDocument
+	result.Decode(&document)
+	return document.Username, nil
+}
+
+// TODO: Use a higher-order function/
+func handleLoginCheck(w http.ResponseWriter, r *http.Request) string {
+	cookie, err := r.Cookie("cerulean_token")
 	var token string
 	if err == http.ErrNoCookie {
 		token = r.Header.Get("Authorization")
@@ -96,15 +111,49 @@ func isLoggedIn(r *http.Request) (string, error) { // TODO: IssuedOn expiry.
 		token = cookie.Value
 	}
 	if token == "" {
-		return "", nil
+		http.Error(w, "{\"error\": \"No access token provided!\"}", http.StatusUnauthorized)
+		return ""
 	}
-	result := database.Collection("tokens").FindOne(*mongoCtx, bson.M{"token": token})
-	if result.Err() == mongo.ErrNoDocuments {
-		return "", nil
-	} else if result.Err() != nil {
-		return "", err
+	username, err := isLoggedIn(token)
+	if err != nil {
+		http.Error(w, "{\"error\": \"Internal Server Error!\"}", http.StatusInternalServerError)
+		return ""
+	} else if username == "" {
+		http.Error(w, "{\"error\": \"Invalid access token provided!\"}", http.StatusUnauthorized)
+		return ""
 	}
-	var document TokensCollectionDocument
-	result.Decode(&document)
-	return document.Username, nil
+	return username
+}
+
+func logoutHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	cookie, err := r.Cookie("cerulean_token")
+	var token string
+	if err == http.ErrNoCookie {
+		token = r.Header.Get("Authorization")
+	} else {
+		token = cookie.Value
+	}
+	if token == "" {
+		http.Error(w, "{\"error\": \"No access token provided!\"}", http.StatusUnauthorized)
+		return
+	}
+	result, err := database.Collection("tokens").DeleteOne(*mongoCtx, bson.M{"token": token})
+	if err != nil {
+		http.Error(w, "{\"error\":\"Internal Server Error!\"}", http.StatusInternalServerError)
+		return
+	} else if result.DeletedCount == 0 {
+		http.Error(w, "{\"error\":\"Invalid access token provided!\"}", http.StatusUnauthorized)
+		return
+	}
+	if _, err = r.Cookie("cerulean_token"); err != http.ErrNoCookie {
+		r.AddCookie(&http.Cookie{
+			Name:     "cerulean_token",
+			Value:    "",
+			HttpOnly: true,
+			SameSite: http.SameSiteLaxMode,
+			MaxAge:   1,
+		})
+	}
+	w.Write([]byte("{\"success\":true}"))
 }

@@ -58,15 +58,17 @@ func main() {
 	fmt.Println("Successfully connected to MongoDB.")
 
 	// Create CORS handler wrapper.
-	corsHandlerWrapper := handlers.CORS(
+	cors := handlers.CORS(
 		handlers.AllowedHeaders([]string{"X-Requested-With", "Content-Type", "Authorization", "Accept"}),
 		handlers.AllowedMethods([]string{"GET", "POST", "PUT", "HEAD", "OPTIONS", "PATCH", "DELETE"}),
 		handlers.AllowedOrigins([]string{"*"}),
 	)
-	http.Handle("/", corsHandlerWrapper(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	http.Handle("/", cors(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(`{"message":"Hello, World!"}`))
 	})))
-	http.Handle("/login", corsHandlerWrapper(http.HandlerFunc(loginHandler)))
+	http.Handle("/login", cors(http.HandlerFunc(loginHandler)))
+	http.Handle("/logout", cors(http.HandlerFunc(logoutHandler)))
+	http.Handle("/todo", cors(http.HandlerFunc(todoHandler)))
 
 	// Start listening on specified port.
 	fmt.Println("Listening on port", config.Port)
