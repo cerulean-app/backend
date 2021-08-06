@@ -68,11 +68,10 @@ func main() {
 	})))
 	http.Handle("/login", cors(http.HandlerFunc(loginHandler)))
 	http.Handle("/logout", cors(http.HandlerFunc(logoutHandler)))
-	http.Handle("/todo", cors(http.HandlerFunc(todoHandler)))
+	http.Handle("/todo", cors(http.HandlerFunc(handleLoginCheck(todoHandler))))
 
 	// Start listening on specified port.
 	fmt.Println("Listening on port", config.Port)
-	http.ListenAndServe(fmt.Sprintf(":%d", config.Port), nil)
-	// if !config.HTTPS.Enabled { err = http.ListenAndServe(config.Port, handler) }
-	// else { err = http.ListenAndServeTLS(port, config.HTTPS.Cert, config.HTTPS.Key, handler) }
+	panic(http.ListenAndServe(fmt.Sprintf(":%d", config.Port), nil))
+	// if config.HTTPS.Enabled { http.ListenAndServeTLS(config.HTTPS.Cert, config.HTTPS.Key) }
 }

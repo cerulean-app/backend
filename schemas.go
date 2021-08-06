@@ -32,7 +32,7 @@ var UsersCollectionSchema = bson.M{
 			"bsonType": "array",
 			"items": bson.M{
 				"bsonType": "object",
-				"required": []string{"id", "name", "description", "done", "repeating", "createdAt", "updatedAt", "dueDate"},
+				"required": []string{"id", "name", "description", "done", "repeating", "createdAt", "updatedAt"},
 				"properties": bson.M{
 					"id":          bson.M{"bsonType": "objectId"},
 					"name":        bson.M{"bsonType": "string", "minLength": 1},

@@ -89,7 +89,7 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(map[string]string{"token": token})
 }
 
-func isLoggedIn(token string) (string, error) { // TODO: IssuedOn expiry.
+func isLoggedIn(token string) (string, error) {
 	result := database.Collection("tokens").FindOne(*mongoCtx, bson.M{"token": token})
 	if result.Err() == mongo.ErrNoDocuments {
 		return "", nil
@@ -98,31 +98,40 @@ func isLoggedIn(token string) (string, error) { // TODO: IssuedOn expiry.
 	}
 	var document TokenDocument
 	result.Decode(&document)
+	// TODO: Idle timeout?
+	if document.IssuedOn.UTC().Add(time.Hour * 24 * 180).Before(time.Now().UTC()) {
+		_, _ = database.Collection("tokens").DeleteOne(*mongoCtx, bson.M{"token": token})
+		return "", nil
+	}
 	return document.Username, nil
 }
 
-// TODO: Use a higher-order function/
-func handleLoginCheck(w http.ResponseWriter, r *http.Request) string {
-	cookie, err := r.Cookie("cerulean_token")
-	var token string
-	if err == http.ErrNoCookie {
-		token = r.Header.Get("Authorization")
-	} else {
-		token = cookie.Value
+func handleLoginCheck(
+	handler func(w http.ResponseWriter, r *http.Request, username string),
+) func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		cookie, err := r.Cookie("cerulean_token")
+		var token string
+		if err == http.ErrNoCookie {
+			token = r.Header.Get("Authorization")
+		} else {
+			token = cookie.Value
+		}
+		if token == "" {
+			http.Error(w, "{\"error\": \"No access token provided!\"}", http.StatusUnauthorized)
+			return
+		}
+		username, err := isLoggedIn(token)
+		if err != nil {
+			http.Error(w, "{\"error\": \"Internal Server Error!\"}", http.StatusInternalServerError)
+			return
+		} else if username == "" {
+			http.Error(w, "{\"error\": \"Invalid access token provided!\"}", http.StatusUnauthorized)
+			return
+		}
+		handler(w, r, username)
 	}
-	if token == "" {
-		http.Error(w, "{\"error\": \"No access token provided!\"}", http.StatusUnauthorized)
-		return ""
-	}
-	username, err := isLoggedIn(token)
-	if err != nil {
-		http.Error(w, "{\"error\": \"Internal Server Error!\"}", http.StatusInternalServerError)
-		return ""
-	} else if username == "" {
-		http.Error(w, "{\"error\": \"Invalid access token provided!\"}", http.StatusUnauthorized)
-		return ""
-	}
-	return username
 }
 
 func logoutHandler(w http.ResponseWriter, r *http.Request) {
