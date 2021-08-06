@@ -40,7 +40,7 @@ var UsersCollectionSchema = bson.M{
 					"done":        bson.M{"bsonType": "boolean"},
 					"createdAt":   bson.M{"bsonType": "date"},
 					"updatedAt":   bson.M{"bsonType": "date"},
-					"repeating":   bson.M{"bsonType": "string", "enum": []string{"daily", "weekly", "monthly", "yearly"}},
+					"repeating":   bson.M{"bsonType": "string", "enum": []string{"", "daily", "weekly", "monthly", "yearly"}},
 					"dueDate":     bson.M{"bsonType": "date"},
 				},
 			},

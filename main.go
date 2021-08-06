@@ -63,12 +63,15 @@ func main() {
 		handlers.AllowedMethods([]string{"GET", "POST", "PUT", "HEAD", "OPTIONS", "PATCH", "DELETE"}),
 		handlers.AllowedOrigins([]string{"*"}),
 	)
+	// TODO: Switch to raw string literals in http.Error and w.Write calls.
 	// Authentication endpoints.
 	http.Handle("/login", cors(http.HandlerFunc(loginHandler)))
 	http.Handle("/logout", cors(http.HandlerFunc(logoutHandler)))
 	http.Handle("/changepassword", cors(http.HandlerFunc(handleLoginCheck(changePasswordHandler, []string{"POST"}))))
 	// Data endpoints.
-	http.Handle("/todo", cors(http.HandlerFunc(handleLoginCheck(todoHandler, []string{"POST"}))))
+	http.Handle("/todo", cors(http.HandlerFunc(handleLoginCheck(createTodoHandler, []string{"POST"}))))
+	http.Handle("/todos", cors(http.HandlerFunc(handleLoginCheck(getTodosHandler, []string{"GET"}))))
+	http.Handle("/todo/", cors(http.HandlerFunc(handleLoginCheck(todoHandler, []string{"DELETE", "PATCH", "GET"}))))
 
 	// Start listening on specified port.
 	fmt.Println("Listening on port", config.Port)
