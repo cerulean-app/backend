@@ -11,6 +11,8 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
+// TODO: Unmark items that are done, repeat at a time before now and have an old updatedAt value.
+
 type TodoData struct {
 	Name        string `json:"name"`
 	Description string `json:"description"`
@@ -103,6 +105,7 @@ func patchTodoHandler(w http.ResponseWriter, r *http.Request, username string, i
 		http.Error(w, "{\"error\":\"Invalid body sent!\"}", http.StatusBadRequest)
 		return
 	}
+	// TODO: Update updatedAt as well, and unmark done item that has to repeat and hasn't been updated yet.
 	http.Error(w, "{\"error\":\"This endpoint is incomplete! Check back later.\"}", http.StatusServiceUnavailable)
 	/*
 		TODO: Complete implementation.

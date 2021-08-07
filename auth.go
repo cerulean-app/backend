@@ -17,11 +17,11 @@ import (
 
 func hashPassword(password string, salt string) string {
 	saltBytes, _ := hex.DecodeString(salt)
-	return string(argon2.IDKey([]byte(password), saltBytes, 1, 8*1024, 4, 32))
+	return string(argon2.IDKey([]byte(password), saltBytes, 18, 32*1024, 4, 32))
 }
 
 func hashPasswordBytes(password string, salt []byte) string {
-	return string(argon2.IDKey([]byte(password), salt, 1, 8*1024, 4, 32))
+	return string(argon2.IDKey([]byte(password), salt, 18, 32*1024, 4, 32))
 }
 
 func generateToken() ([]byte, error) {
@@ -71,6 +71,9 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	} else if hashPassword(loginData.Password, user.Salt) != user.Password {
 		http.Error(w, "{\"error\":\"Invalid username or password!\"}", http.StatusUnauthorized)
+		return
+	} else if user.Verified != "" {
+		http.Error(w, "{\"error\":\"Account not verified!\"}", http.StatusUnauthorized)
 		return
 	}
 	bytes, err := generateToken()

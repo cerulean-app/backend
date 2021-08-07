@@ -27,6 +27,10 @@ var UsersCollectionSchema = bson.M{
 			"minLength": 4,
 			"pattern":   "^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\\.[a-zA-Z0-9-.]+$",
 		},
+		"verified": bson.M{
+			"bsonType":  "string",
+			"minLength": 16,
+		},
 		"lastEdited": bson.M{"bsonType": "date"},
 		"todos": bson.M{
 			"bsonType": "array",
@@ -53,6 +57,7 @@ type UserDocument struct {
 	Password   string         `json:"password" bson:"password"`
 	Salt       string         `json:"salt" bson:"salt"`
 	Email      string         `json:"email" bson:"email"`
+	Verified   string         `json:"verified" bson:"verified"`
 	LastEdited time.Time      `json:"lastEdited" bson:"lastEdited"`
 	Todos      []TodoDocument `json:"todos" bson:"todos"`
 }

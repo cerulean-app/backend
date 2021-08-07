@@ -4,7 +4,7 @@ The backend for Cerulean.
 
 ## API Documentation
 
-Cerulean provides a REST API for you to be able to write client applications and integrations around. [Click here to view the documentation.](https://github.com/cerulean-app/backend/blob/main/docs/API.md)
+Cerulean provides a REST API for you to be able to write client applications and integrations around. [Click here to view the documentation.](https://github.com/cerulean-app/backend/blob/main/API.md)
 
 ## Setup
 

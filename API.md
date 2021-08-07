@@ -2,17 +2,34 @@
 
 **This REST API is still a work in progress!** Some endpoints and features have not been finalised. If you are writing a Cerulean client, you will need to keep track of the current API until beta versions are released. Additionally, some of these endpoints have not yet been implemented in the back-end.
 
-- Password length/security validation.
-- Todo ordering endpoints.
 - Multiple to-do lists.
+- Repeated to-do items.
+- `POST /resendverifyemail`
+- `POST /forgotpassword`
+- `POST /deleteaccount`
+- `POST /todos/order`
 - `POST /verifyuser`
 - `POST /register`
 
-All dates sent to and fro from the REST API are encoded as `ISO 8601` strings as emitted by Date#toISOString in JavaScript.
+All dates sent to and fro from the REST API are encoded as `ISO 8601` strings as emitted by `Date#toISOString` in JavaScript.
 
 ## [Authentication Scheme](#authentication-scheme)
 
 For authentication, the Cerulean REST API requires an `Authorization` header or a `cerulean_token` cookie to be sent with every request, containing a token which is sent to the client after logging in using the [POST /login](#post-login) endpoint. The [POST /logout](#post-logout) endpoint can be used to invalidate the user's token. The token returned expires after 6 months. Your client should be well equipped to handle token expiries.
+
+### [Extra Authentication Info](#extra-authentication-info)
+
+The user's password can be changed using the [POST /changepassword](#post-changepassword) endpoint. The minimum password length is 8 characters for security reasons. Calling this endpoint logs the user out everywhere except their current session. A user can be registered using the [POST /register](#post-register) endpoint, after which they will be sent an email containing a link to a webpage with a token in the query string, which upon loading will call [POST /verifyuser](#post-verifyuser) to activate the account with the token in the query string. This token has an expiry date of 24 hours, and can be resent by calling [POST /resendverifyemail](#post-resendverifyemail).
+
+The user's account can be deleted with [POST /deleteaccount](#post-deleteaccount). This deletion is permanent, and cannot be undone. Hence, this endpoint should be treated with caution.
+
+## [Syncing Todo Lists](#syncing-todo-lists)
+
+If you are writing a client, and your client goes offline, there are 2 ways to ensure that your client can continue to work offline without messing up any data on the back-end that may be more up to date. It is highly advisable to follow these guidelines. One way to cache all todos on the client, and display them in a read-only mode until an internet connection is available again. However, this is not an ideal user experience.
+
+The ideal way is to cache the todos on the client and create an array of todo IDs which your local client has deleted. When you reconnect to the back-end, you must call the [GET /todos](#get-todos) endpoint to get the latest todos from the server. You can then compare this with your own cache by taking the response, deleting todos from it that your client deleted, modifying todos sharing the same ID in your local cache and the response, and adding todos present in your cache which are not present on the server. Additionally, you can compare the order of the local cache and server response and calculate an appropriate order for the merged lists. Once you have done the comparison, you can send the required DELETE/PATCH/POST requests to the server to sync your local cache with the server, and then overwrite your local cache with [GET /todos](#get-todos).
+
+We may eventually provide a POST /sync endpoint, which would take all todos on the client as well as the client's old cache, merge them with the back-end's copy, and send back a merged list of todos to the client. This would reduce the amount of client-side logic and provide resistance against network failures, which may cause unexpected behaviour.
 
 ## [POST /login](#post-login)
 
@@ -115,7 +132,7 @@ Get all of the user's todo items. [Read the parameters for POST /todo to help un
 
 ## [POST /todo](#post-todo)
 
-Create a new to-do for the current user.
+Create a new todo item for the current user.
 
 ### [Parameters](#post-todo-parameters)
 
