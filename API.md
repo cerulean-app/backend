@@ -2,8 +2,7 @@
 
 **This REST API is still a work in progress!** Some endpoints and features have not been finalised. If you are writing a Cerulean client, you will need to keep track of the current API until beta versions are released. Additionally, some of these endpoints have not yet been implemented in the back-end.
 
-- Multiple to-do lists.
-- Repeated to-do items.
+- Repeated todo items API is WIP.
 - `POST /resendverifyemail`
 - `POST /forgotpassword`
 - `POST /deleteaccount`

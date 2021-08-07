@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"io"
 	"net/http"
 	"strings"
@@ -142,7 +143,7 @@ func handleLoginCheck(
 		}
 		cookie, err := r.Cookie("cerulean_token")
 		var token string
-		if err == http.ErrNoCookie {
+		if errors.Is(err, http.ErrNoCookie) {
 			token = r.Header.Get("Authorization")
 		} else {
 			token = cookie.Value
@@ -171,7 +172,7 @@ func logoutHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	cookie, err := r.Cookie("cerulean_token")
 	var token string
-	if err == http.ErrNoCookie {
+	if errors.Is(err, http.ErrNoCookie) {
 		token = r.Header.Get("Authorization")
 	} else {
 		token = cookie.Value
