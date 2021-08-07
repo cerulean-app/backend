@@ -41,44 +41,44 @@ type LoginData struct {
 func loginHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	if r.Method != "POST" {
-		http.Error(w, "{\"error\":\"Allowed methods: POST\"}", http.StatusMethodNotAllowed)
+		http.Error(w, `{"error":"Allowed methods: POST"}`, http.StatusMethodNotAllowed)
 		return
 	}
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
-		http.Error(w, "{\"error\":\"Invalid body sent!\"}", http.StatusBadRequest)
+		http.Error(w, `{"error":"Invalid body sent!"}`, http.StatusBadRequest)
 		return
 	}
 	var loginData LoginData
 	err = json.Unmarshal(body, &loginData)
 	if err != nil {
-		http.Error(w, "{\"error\":\"Invalid body sent!\"}", http.StatusBadRequest)
+		http.Error(w, `{"error":"Invalid body sent!"}`, http.StatusBadRequest)
 		return
 	}
 	result := database.Collection("users").FindOne(*mongoCtx, bson.M{"username": loginData.Username})
 	if result.Err() == mongo.ErrNoDocuments {
-		http.Error(w, "{\"error\":\"Invalid username or password!\"}", http.StatusUnauthorized)
+		http.Error(w, `{"error":"Invalid username or password!"}`, http.StatusUnauthorized)
 		return
 	} else if result.Err() != nil {
-		http.Error(w, "{\"error\":\"Internal Server Error!\"}", http.StatusInternalServerError)
+		http.Error(w, `{"error":"Internal Server Error!"}`, http.StatusInternalServerError)
 		return
 	}
 	// Hash and check the password.
 	var user UserDocument
 	err = result.Decode(&user)
 	if err != nil {
-		http.Error(w, "{\"error\":\"Internal Server Error!\"}", http.StatusInternalServerError)
+		http.Error(w, `{"error":"Internal Server Error!"}`, http.StatusInternalServerError)
 		return
 	} else if hashPassword(loginData.Password, user.Salt) != user.Password {
-		http.Error(w, "{\"error\":\"Invalid username or password!\"}", http.StatusUnauthorized)
+		http.Error(w, `{"error":"Invalid username or password!"}`, http.StatusUnauthorized)
 		return
 	} else if user.Verified != "" {
-		http.Error(w, "{\"error\":\"Account not verified!\"}", http.StatusUnauthorized)
+		http.Error(w, `{"error":"Account not verified!"}`, http.StatusUnauthorized)
 		return
 	}
 	bytes, err := generateToken()
 	if err != nil {
-		http.Error(w, "{\"error\":\"Internal Server Error!\"}", http.StatusInternalServerError)
+		http.Error(w, `{"error":"Internal Server Error!"}`, http.StatusInternalServerError)
 		return
 	}
 	token := base64.StdEncoding.EncodeToString(bytes)
@@ -88,7 +88,7 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 		"issuedOn": time.Now().UTC(),
 	})
 	if err != nil {
-		http.Error(w, "{\"error\":\"Internal Server Error!\"}", http.StatusInternalServerError)
+		http.Error(w, `{"error":"Internal Server Error!"}`, http.StatusInternalServerError)
 		return
 	}
 	if r.URL.Query().Get("cookie") != "false" {
@@ -137,7 +137,7 @@ func handleLoginCheck(
 			}
 		}
 		if !allowedMethod {
-			http.Error(w, "{\"error\":\"Allowed methods: "+strings.Join(methods, ", ")+"\"}", http.StatusMethodNotAllowed)
+			http.Error(w, `{"error":"Allowed methods: `+strings.Join(methods, ", ")+`"}`, http.StatusMethodNotAllowed)
 			return
 		}
 		cookie, err := r.Cookie("cerulean_token")
@@ -148,15 +148,15 @@ func handleLoginCheck(
 			token = cookie.Value
 		}
 		if token == "" {
-			http.Error(w, "{\"error\": \"No access token provided!\"}", http.StatusUnauthorized)
+			http.Error(w, `{"error":"No access token provided!"}`, http.StatusUnauthorized)
 			return
 		}
 		username, err := isLoggedIn(token)
 		if err != nil {
-			http.Error(w, "{\"error\": \"Internal Server Error!\"}", http.StatusInternalServerError)
+			http.Error(w, `{"error":"Internal Server Error!"}`, http.StatusInternalServerError)
 			return
 		} else if username == "" {
-			http.Error(w, "{\"error\": \"Invalid access token provided!\"}", http.StatusUnauthorized)
+			http.Error(w, `{"error":"Invalid access token provided!"}`, http.StatusUnauthorized)
 			return
 		}
 		handler(w, r, username, token)
@@ -166,7 +166,7 @@ func handleLoginCheck(
 func logoutHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	if r.Method != "POST" {
-		http.Error(w, "{\"error\":\"Allowed methods: POST\"}", http.StatusMethodNotAllowed)
+		http.Error(w, `{"error":"Allowed methods: POST"}`, http.StatusMethodNotAllowed)
 		return
 	}
 	cookie, err := r.Cookie("cerulean_token")
@@ -177,15 +177,15 @@ func logoutHandler(w http.ResponseWriter, r *http.Request) {
 		token = cookie.Value
 	}
 	if token == "" {
-		http.Error(w, "{\"error\": \"No access token provided!\"}", http.StatusUnauthorized)
+		http.Error(w, `{"error":"No access token provided!"}`, http.StatusUnauthorized)
 		return
 	}
 	result, err := database.Collection("tokens").DeleteOne(*mongoCtx, bson.M{"token": token})
 	if err != nil {
-		http.Error(w, "{\"error\":\"Internal Server Error!\"}", http.StatusInternalServerError)
+		http.Error(w, `{"error":"Internal Server Error!"}`, http.StatusInternalServerError)
 		return
 	} else if result.DeletedCount == 0 {
-		http.Error(w, "{\"error\":\"Invalid access token provided!\"}", http.StatusUnauthorized)
+		http.Error(w, `{"error":"Invalid access token provided!"}`, http.StatusUnauthorized)
 		return
 	}
 	if _, err = r.Cookie("cerulean_token"); err != http.ErrNoCookie {
@@ -197,7 +197,7 @@ func logoutHandler(w http.ResponseWriter, r *http.Request) {
 			MaxAge:   1,
 		})
 	}
-	w.Write([]byte("{\"success\":true}"))
+	w.Write([]byte(`{"success":true}`))
 }
 
 type ChangePasswordData struct {
@@ -207,37 +207,37 @@ type ChangePasswordData struct {
 
 func changePasswordHandler(w http.ResponseWriter, r *http.Request, username string, token string) {
 	if r.Method != "POST" {
-		http.Error(w, "{\"error\":\"Allowed methods: POST\"}", http.StatusMethodNotAllowed)
+		http.Error(w, `{"error":"Allowed methods: POST"}`, http.StatusMethodNotAllowed)
 		return
 	}
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
-		http.Error(w, "{\"error\":\"Invalid body sent!\"}", http.StatusBadRequest)
+		http.Error(w, `{"error":"Invalid body sent!"}`, http.StatusBadRequest)
 		return
 	}
 	var passwordData ChangePasswordData
 	err = json.Unmarshal(body, &passwordData)
 	if err != nil || passwordData.NewPassword == "" || passwordData.CurrentPassword == "" {
-		http.Error(w, "{\"error\":\"Invalid body sent!\"}", http.StatusBadRequest)
+		http.Error(w, `{"error":"Invalid body sent!"}`, http.StatusBadRequest)
 		return
 	}
 	result := database.Collection("users").FindOne(*mongoCtx, bson.M{"username": username})
 	if result.Err() != nil {
-		http.Error(w, "{\"error\":\"Internal Server Error!\"}", http.StatusInternalServerError)
+		http.Error(w, `{"error":"Internal Server Error!"}`, http.StatusInternalServerError)
 		return
 	}
 	var user UserDocument
 	err = result.Decode(&user)
 	if err != nil {
-		http.Error(w, "{\"error\":\"Internal Server Error!\"}", http.StatusInternalServerError)
+		http.Error(w, `{"error":"Internal Server Error!"}`, http.StatusInternalServerError)
 		return
 	} else if hashPassword(passwordData.CurrentPassword, user.Salt) != user.Password {
-		http.Error(w, "{\"error\":\"Invalid password!\"}", http.StatusUnauthorized)
+		http.Error(w, `{"error":"Invalid password!"}`, http.StatusUnauthorized)
 		return
 	}
 	salt, err := generateToken()
 	if err != nil {
-		http.Error(w, "{\"error\":\"Internal Server Error!\"}", http.StatusInternalServerError)
+		http.Error(w, `{"error":"Internal Server Error!"}`, http.StatusInternalServerError)
 		return
 	}
 	updateResult, err := database.Collection("users").UpdateOne(
@@ -246,8 +246,8 @@ func changePasswordHandler(w http.ResponseWriter, r *http.Request, username stri
 		}},
 	)
 	if err != nil || updateResult.ModifiedCount != 1 {
-		http.Error(w, "{\"error\":\"Internal Server Error!\"}", http.StatusInternalServerError)
+		http.Error(w, `{"error":"Internal Server Error!"}`, http.StatusInternalServerError)
 		return
 	}
-	w.Write([]byte("{\"success\":true}"))
+	w.Write([]byte(`{"success":true}`))
 }

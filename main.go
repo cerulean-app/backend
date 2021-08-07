@@ -63,7 +63,6 @@ func main() {
 		handlers.AllowedMethods([]string{"GET", "POST", "PUT", "HEAD", "OPTIONS", "PATCH", "DELETE"}),
 		handlers.AllowedOrigins([]string{"*"}),
 	)
-	// TODO: Switch to raw string literals in http.Error and w.Write calls.
 	// Authentication endpoints.
 	http.Handle("/login", cors(http.HandlerFunc(loginHandler)))
 	http.Handle("/logout", cors(http.HandlerFunc(logoutHandler)))

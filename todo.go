@@ -9,6 +9,7 @@ import (
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 // TODO: Unmark items that are done, repeat at a time before now and have an old updatedAt value.
@@ -24,16 +25,16 @@ type TodoData struct {
 func createTodoHandler(w http.ResponseWriter, r *http.Request, username string, token string) {
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
-		http.Error(w, "{\"error\":\"Invalid body sent!\"}", http.StatusBadRequest)
+		http.Error(w, `{"error":"Invalid body sent!"}`, http.StatusBadRequest)
 		return
 	}
 	var todo TodoData
 	err = json.Unmarshal(body, &todo)
 	if err != nil {
-		http.Error(w, "{\"error\":\"Invalid body sent!\"}", http.StatusBadRequest)
+		http.Error(w, `{"error":"Invalid body sent!"}`, http.StatusBadRequest)
 		return
 	} else if todo.Name == "" {
-		http.Error(w, "{\"error\":\"Todo name is required!\"}", http.StatusBadRequest)
+		http.Error(w, `{"error":"Todo name is required!"}`, http.StatusBadRequest)
 		return
 	}
 	nowTime := time.Now().UTC()
@@ -49,7 +50,7 @@ func createTodoHandler(w http.ResponseWriter, r *http.Request, username string, 
 	if todo.DueDate != "" {
 		todoDocument.DueDate, err = time.Parse("2006-01-02T15:04:05.999Z07:00", todo.DueDate)
 		if err != nil {
-			http.Error(w, "{\"error\":\"Invalid due date provided!\"}", http.StatusBadRequest)
+			http.Error(w, `{"error":"Invalid due date provided!"}`, http.StatusBadRequest)
 			return
 		}
 	}
@@ -57,7 +58,7 @@ func createTodoHandler(w http.ResponseWriter, r *http.Request, username string, 
 		*mongoCtx, bson.M{"username": username}, bson.M{"$push": bson.M{"todos": todoDocument}},
 	)
 	if err != nil || result.MatchedCount != 1 {
-		http.Error(w, "{\"error\":\"Internal Server Error!\"}", http.StatusInternalServerError)
+		http.Error(w, `{"error":"Internal Server Error!"}`, http.StatusInternalServerError)
 		return
 	}
 	json.NewEncoder(w).Encode(todoDocument)
@@ -80,59 +81,78 @@ func todoHandler(w http.ResponseWriter, r *http.Request, username string, token 
 }
 
 func deleteTodoHandler(w http.ResponseWriter, r *http.Request, username string, id string) {
-	result, err := database.Collection("users").UpdateOne(*mongoCtx, bson.M{"username": username}, bson.M{
-		"$pull": bson.M{"todos": bson.M{"id": id}},
-	})
-	if err != nil {
-		http.Error(w, "{\"error\":\"Internal Server Error!\"}", http.StatusInternalServerError)
+	result := database.Collection("users").FindOneAndUpdate(
+		*mongoCtx,
+		bson.M{"username": username, "todos": bson.M{"id": id}},
+		bson.M{"$pull": bson.M{"todos": bson.M{"id": id}}},
+	)
+	if result.Err() == mongo.ErrNoDocuments {
+		http.Error(w, `{"error":"Todo not found!"}`, http.StatusNotFound)
 		return
-	} else if result.ModifiedCount == 0 {
-		http.Error(w, "{\"error\":\"Todo not found!\"}", http.StatusNotFound)
+	} else if result.Err() != nil {
+		http.Error(w, `{"error":"Internal Server Error!"}`, http.StatusInternalServerError)
 		return
 	}
-	w.Write([]byte("{\"success\":true}")) // TODO: Inconsistent with documentation!
+	var user UserDocument
+	err := result.Decode(&user)
+	if err != nil {
+		http.Error(w, `{"error":"Internal Server Error!"}`, http.StatusInternalServerError)
+		return
+	}
+	var foundTodo *TodoDocument
+	for _, todo := range user.Todos {
+		if todo.ID.Hex() == id {
+			foundTodo = &todo
+			break
+		}
+	}
+	if foundTodo == nil {
+		http.Error(w, `{"error":"Internal Server Error!"}`, http.StatusInternalServerError)
+		return
+	}
+	json.NewEncoder(w).Encode(foundTodo)
 }
 
 func patchTodoHandler(w http.ResponseWriter, r *http.Request, username string, id string) {
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
-		http.Error(w, "{\"error\":\"Invalid body sent!\"}", http.StatusBadRequest)
+		http.Error(w, `{"error":"Invalid body sent!"}`, http.StatusBadRequest)
 		return
 	}
 	var todo TodoData
 	err = json.Unmarshal(body, &todo)
 	if err != nil {
-		http.Error(w, "{\"error\":\"Invalid body sent!\"}", http.StatusBadRequest)
+		http.Error(w, `{"error":"Invalid body sent!"}`, http.StatusBadRequest)
 		return
 	}
 	// TODO: Update updatedAt as well, and unmark done item that has to repeat and hasn't been updated yet.
-	http.Error(w, "{\"error\":\"This endpoint is incomplete! Check back later.\"}", http.StatusServiceUnavailable)
+	http.Error(w, `{"error":"This endpoint is incomplete! Check back later."}`, http.StatusServiceUnavailable)
 	/*
 		TODO: Complete implementation.
 		result, err := database.Collection("users").UpdateOne(*mongoCtx, bson.M{"username": username}, bson.M{
 			"$pull": bson.M{"todos": bson.M{"id": id}},
 		})
 		if err != nil {
-			http.Error(w, "{\"error\":\"Internal Server Error!\"}", http.StatusInternalServerError)
+			http.Error(w, `{"error":"Internal Server Error!"}`, http.StatusInternalServerError)
 			return
 		} else if result.ModifiedCount == 0 {
-			http.Error(w, "{\"error\":\"Todo not found!\"}", http.StatusNotFound)
+			http.Error(w, `{"error":"Todo not found!"}`, http.StatusNotFound)
 			return
 		}
-		w.Write([]byte("{\"success\":true}")) // TODO: Inconsistent with documentation!
+		w.Write([]byte(`{"success":true}`)) // TODO: Inconsistent with documentation!
 	*/
 }
 
 func getTodoHandler(w http.ResponseWriter, r *http.Request, username string, id string) {
 	result := database.Collection("users").FindOne(*mongoCtx, bson.M{"username": username})
 	if result.Err() != nil {
-		http.Error(w, "{\"error\":\"Internal Server Error!\"}", http.StatusInternalServerError)
+		http.Error(w, `{"error":"Internal Server Error!"}`, http.StatusInternalServerError)
 		return
 	}
 	var user UserDocument
 	err := result.Decode(&user)
 	if err != nil {
-		http.Error(w, "{\"error\":\"Internal Server Error!\"}", http.StatusInternalServerError)
+		http.Error(w, `{"error":"Internal Server Error!"}`, http.StatusInternalServerError)
 		return
 	}
 	for _, todo := range user.Todos {
@@ -141,19 +161,19 @@ func getTodoHandler(w http.ResponseWriter, r *http.Request, username string, id 
 			return
 		}
 	}
-	http.Error(w, "{\"error\":\"Todo not found!\"}", http.StatusNotFound)
+	http.Error(w, `{"error":"Todo not found!"}`, http.StatusNotFound)
 }
 
 func getTodosHandler(w http.ResponseWriter, r *http.Request, username string, token string) {
 	result := database.Collection("users").FindOne(*mongoCtx, bson.M{"username": username})
 	if result.Err() != nil {
-		http.Error(w, "{\"error\":\"Internal Server Error!\"}", http.StatusInternalServerError)
+		http.Error(w, `{"error":"Internal Server Error!"}`, http.StatusInternalServerError)
 		return
 	}
 	var user UserDocument
 	err := result.Decode(&user)
 	if err != nil {
-		http.Error(w, "{\"error\":\"Internal Server Error!\"}", http.StatusInternalServerError)
+		http.Error(w, `{"error":"Internal Server Error!"}`, http.StatusInternalServerError)
 		return
 	}
 	json.NewEncoder(w).Encode(user.Todos)
