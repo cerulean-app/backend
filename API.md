@@ -211,6 +211,8 @@ Edit one of the user's todo items. [Read the parameters for POST /todo to help u
 }
 ```
 
+Note: The endpoint returns the updated todo item.
+
 ## [DELETE /todo/:id](#delete-todo-id)
 
 Delete one of the user's todo items. [Read the parameters for POST /todo to help understand the response of this endpoint fully.](#post-todo-parameters) `id`, `createdAt` and `updatedAt` are created by the server and cannot be edited directly.

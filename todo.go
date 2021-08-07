@@ -10,16 +10,17 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-// TODO: Unmark items that are done, repeat at a time before now and have an old updatedAt value.
+// TODO: Mark items that are done, repeat at a time before now and after updatedAt, as undone.
 
 type TodoData struct {
-	Name        string `json:"name"`
-	Description string `json:"description"`
-	Done        bool   `json:"done"`
-	Repeating   string `json:"repeating"`
-	DueDate     string `json:"dueDate"`
+	Name        string          `json:"name"`
+	Description string          `json:"description"`
+	Done        bool            `json:"done"`
+	Repeating   string          `json:"repeating"`
+	DueDate     json.RawMessage `json:"dueDate"`
 }
 
 func createTodoHandler(w http.ResponseWriter, r *http.Request, username string, token string) {
@@ -47,8 +48,8 @@ func createTodoHandler(w http.ResponseWriter, r *http.Request, username string, 
 		CreatedAt:   nowTime,
 		UpdatedAt:   nowTime,
 	}
-	if todo.DueDate != "" {
-		todoDocument.DueDate, err = time.Parse("2006-01-02T15:04:05.999Z07:00", todo.DueDate)
+	if len(todo.DueDate) > 0 && string(todo.DueDate) != "null" {
+		todoDocument.DueDate, err = time.Parse("2006-01-02T15:04:05.999Z07:00", string(todo.DueDate))
 		if err != nil {
 			http.Error(w, `{"error":"Invalid due date provided!"}`, http.StatusBadRequest)
 			return
@@ -125,22 +126,56 @@ func patchTodoHandler(w http.ResponseWriter, r *http.Request, username string, i
 		http.Error(w, `{"error":"Invalid body sent!"}`, http.StatusBadRequest)
 		return
 	}
-	// TODO: Update updatedAt as well, and unmark done item that has to repeat and hasn't been updated yet.
-	http.Error(w, `{"error":"This endpoint is incomplete! Check back later."}`, http.StatusServiceUnavailable)
-	/*
-		TODO: Complete implementation.
-		result, err := database.Collection("users").UpdateOne(*mongoCtx, bson.M{"username": username}, bson.M{
-			"$pull": bson.M{"todos": bson.M{"id": id}},
-		})
+	setOp := bson.M{
+		"todos.$.done":      todo.Done,
+		"todos.$.updatedAt": time.Now().UTC(),
+	}
+	if todo.Name != "" {
+		setOp["todos.$.name"] = todo.Name
+	}
+	if todo.Description != "" {
+		setOp["todos.$.description"] = todo.Description
+	}
+	update := bson.M{"$set": setOp}
+	if len(todo.DueDate) > 0 && string(todo.DueDate) == "null" {
+		update["$unset"] = bson.M{"dueDate": 1}
+	} else if len(todo.DueDate) > 0 {
+		setOp["todos.$.dueDate"], err = time.Parse("2006-01-02T15:04:05.999Z07:00", string(todo.DueDate))
 		if err != nil {
-			http.Error(w, `{"error":"Internal Server Error!"}`, http.StatusInternalServerError)
-			return
-		} else if result.ModifiedCount == 0 {
-			http.Error(w, `{"error":"Todo not found!"}`, http.StatusNotFound)
+			http.Error(w, `{"error":"Invalid due date provided!"}`, http.StatusBadRequest)
 			return
 		}
-		w.Write([]byte(`{"success":true}`)) // TODO: Inconsistent with documentation!
-	*/
+	}
+	after := options.After
+	result := database.Collection("users").FindOneAndUpdate(
+		*mongoCtx, bson.M{"username": username, "todos.id": id}, update,
+		&options.FindOneAndUpdateOptions{ReturnDocument: &after},
+	)
+	if result.Err() == mongo.ErrNoDocuments {
+		http.Error(w, `{"error":"Todo not found!"}`, http.StatusNotFound)
+		return
+	} else if result.Err() != nil {
+		http.Error(w, `{"error":"Internal Server Error!"}`, http.StatusNotFound)
+		return
+	}
+	var user UserDocument
+	err = result.Decode(&user)
+	if err != nil {
+		http.Error(w, `{"error":"Internal Server Error!"}`, http.StatusInternalServerError)
+		return
+	}
+	var foundTodo *TodoDocument
+	for _, todo := range user.Todos {
+		if todo.ID.Hex() == id {
+			foundTodo = &todo
+			break
+		}
+	}
+	if foundTodo == nil {
+		http.Error(w, `{"error":"Internal Server Error!"}`, http.StatusInternalServerError)
+		return
+	}
+	json.NewEncoder(w).Encode(foundTodo)
 }
 
 func getTodoHandler(w http.ResponseWriter, r *http.Request, username string, id string) {
