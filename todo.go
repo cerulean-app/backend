@@ -56,7 +56,7 @@ func createTodoHandler(w http.ResponseWriter, r *http.Request, username string, 
 		}
 	}
 	result, err := database.Collection("users").UpdateOne(
-		*mongoCtx, bson.M{"username": username}, bson.M{"$push": bson.M{"todos": todoDocument}},
+		mongoCtx, bson.M{"username": username}, bson.M{"$push": bson.M{"todos": todoDocument}},
 	)
 	if err != nil || result.MatchedCount != 1 {
 		http.Error(w, `{"error":"Internal Server Error!"}`, http.StatusInternalServerError)
@@ -83,7 +83,7 @@ func todoHandler(w http.ResponseWriter, r *http.Request, username string, token 
 
 func deleteTodoHandler(w http.ResponseWriter, r *http.Request, username string, id string) {
 	result := database.Collection("users").FindOneAndUpdate(
-		*mongoCtx,
+		mongoCtx,
 		bson.M{"username": username, "todos": bson.M{"id": id}},
 		bson.M{"$pull": bson.M{"todos": bson.M{"id": id}}},
 	)
@@ -148,7 +148,7 @@ func patchTodoHandler(w http.ResponseWriter, r *http.Request, username string, i
 	}
 	after := options.After
 	result := database.Collection("users").FindOneAndUpdate(
-		*mongoCtx, bson.M{"username": username, "todos.id": id}, update,
+		mongoCtx, bson.M{"username": username, "todos.id": id}, update,
 		&options.FindOneAndUpdateOptions{ReturnDocument: &after},
 	)
 	if result.Err() == mongo.ErrNoDocuments {
@@ -179,7 +179,7 @@ func patchTodoHandler(w http.ResponseWriter, r *http.Request, username string, i
 }
 
 func getTodoHandler(w http.ResponseWriter, r *http.Request, username string, id string) {
-	result := database.Collection("users").FindOne(*mongoCtx, bson.M{"username": username})
+	result := database.Collection("users").FindOne(mongoCtx, bson.M{"username": username})
 	if result.Err() != nil {
 		http.Error(w, `{"error":"Internal Server Error!"}`, http.StatusInternalServerError)
 		return
@@ -200,7 +200,7 @@ func getTodoHandler(w http.ResponseWriter, r *http.Request, username string, id 
 }
 
 func getTodosHandler(w http.ResponseWriter, r *http.Request, username string, token string) {
-	result := database.Collection("users").FindOne(*mongoCtx, bson.M{"username": username})
+	result := database.Collection("users").FindOne(mongoCtx, bson.M{"username": username})
 	if result.Err() != nil {
 		http.Error(w, `{"error":"Internal Server Error!"}`, http.StatusInternalServerError)
 		return

@@ -17,7 +17,7 @@ import (
 var config Config
 var mongodb *mongo.Client
 var database *mongo.Database
-var mongoCtx *context.Context
+var mongoCtx context.Context
 
 type Config struct {
 	Port     int    `json:"port"`
@@ -73,7 +73,7 @@ func main() {
 	http.Handle("/todo/", cors(http.HandlerFunc(handleLoginCheck(todoHandler, []string{"DELETE", "PATCH", "GET"}))))
 
 	// Start listening on specified port.
-	fmt.Println("Listening on port", config.Port)
+	fmt.Printf("Listening on port %d.\n", config.Port)
 	panic(http.ListenAndServe(fmt.Sprintf(":%d", config.Port), nil))
 	// if config.HTTPS.Enabled { http.ListenAndServeTLS(config.HTTPS.Cert, config.HTTPS.Key) }
 }

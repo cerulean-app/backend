@@ -56,7 +56,7 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, `{"error":"Invalid body sent!"}`, http.StatusBadRequest)
 		return
 	}
-	result := database.Collection("users").FindOne(*mongoCtx, bson.M{"username": loginData.Username})
+	result := database.Collection("users").FindOne(mongoCtx, bson.M{"username": loginData.Username})
 	if result.Err() == mongo.ErrNoDocuments {
 		http.Error(w, `{"error":"Invalid username or password!"}`, http.StatusUnauthorized)
 		return
@@ -83,7 +83,7 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	token := base64.StdEncoding.EncodeToString(bytes)
-	_, err = database.Collection("tokens").InsertOne(*mongoCtx, bson.M{
+	_, err = database.Collection("tokens").InsertOne(mongoCtx, bson.M{
 		"token":    token,
 		"username": loginData.Username,
 		"issuedOn": time.Now().UTC(),
@@ -106,7 +106,7 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func isLoggedIn(token string) (string, error) {
-	result := database.Collection("tokens").FindOne(*mongoCtx, bson.M{"token": token})
+	result := database.Collection("tokens").FindOne(mongoCtx, bson.M{"token": token})
 	if result.Err() == mongo.ErrNoDocuments {
 		return "", nil
 	} else if result.Err() != nil {
@@ -119,7 +119,7 @@ func isLoggedIn(token string) (string, error) {
 	}
 	// TODO: Idle timeout?
 	if document.IssuedOn.UTC().Add(time.Hour * 24 * 180).Before(time.Now().UTC()) {
-		_, _ = database.Collection("tokens").DeleteOne(*mongoCtx, bson.M{"token": token})
+		_, _ = database.Collection("tokens").DeleteOne(mongoCtx, bson.M{"token": token})
 		return "", nil
 	}
 	return document.Username, nil
@@ -181,7 +181,7 @@ func logoutHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, `{"error":"No access token provided!"}`, http.StatusUnauthorized)
 		return
 	}
-	result, err := database.Collection("tokens").DeleteOne(*mongoCtx, bson.M{"token": token})
+	result, err := database.Collection("tokens").DeleteOne(mongoCtx, bson.M{"token": token})
 	if err != nil {
 		http.Error(w, `{"error":"Internal Server Error!"}`, http.StatusInternalServerError)
 		return
@@ -222,7 +222,7 @@ func changePasswordHandler(w http.ResponseWriter, r *http.Request, username stri
 		http.Error(w, `{"error":"Invalid body sent!"}`, http.StatusBadRequest)
 		return
 	}
-	result := database.Collection("users").FindOne(*mongoCtx, bson.M{"username": username})
+	result := database.Collection("users").FindOne(mongoCtx, bson.M{"username": username})
 	if result.Err() != nil {
 		http.Error(w, `{"error":"Internal Server Error!"}`, http.StatusInternalServerError)
 		return
@@ -242,7 +242,7 @@ func changePasswordHandler(w http.ResponseWriter, r *http.Request, username stri
 		return
 	}
 	updateResult, err := database.Collection("users").UpdateOne(
-		*mongoCtx, bson.M{"username": username}, bson.M{"$set": bson.M{
+		mongoCtx, bson.M{"username": username}, bson.M{"$set": bson.M{
 			"password": hashPasswordBytes(passwordData.NewPassword, salt), "salt": hex.EncodeToString(salt),
 		}},
 	)
