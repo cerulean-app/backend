@@ -66,6 +66,8 @@ func main() {
 	// Authentication endpoints.
 	http.Handle("/login", cors(http.HandlerFunc(loginHandler)))
 	http.Handle("/logout", cors(http.HandlerFunc(logoutHandler)))
+	http.Handle("/register", cors(http.HandlerFunc(registerHandler)))
+	http.Handle("/deleteaccount", cors(http.HandlerFunc(handleLoginCheck(deleteAccountHandler, []string{"POST"}))))
 	http.Handle("/changepassword", cors(http.HandlerFunc(handleLoginCheck(changePasswordHandler, []string{"POST"}))))
 	// Data endpoints.
 	http.Handle("/todo", cors(http.HandlerFunc(handleLoginCheck(createTodoHandler, []string{"POST"}))))

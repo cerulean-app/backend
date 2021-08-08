@@ -2,13 +2,12 @@
 
 **This REST API is still a work in progress!** Some endpoints and features have not been finalised. If you are writing a Cerulean client, you will need to keep track of the current API until beta versions are released. Additionally, some of these endpoints have not yet been implemented in the back-end.
 
+- `POST /todos/order`
 - Repeated todo items API is WIP.
+- `POST /register` email verification.
 - `POST /resendverifyemail`
 - `POST /forgotpassword`
-- `POST /deleteaccount`
-- `POST /todos/order`
 - `POST /verifyuser`
-- `POST /register`
 
 All dates sent to and fro from the REST API are encoded as `ISO 8601` strings as emitted by `Date#toISOString` in JavaScript.
 
@@ -30,6 +29,25 @@ The ideal way is to cache the todos on the client and create an array of todo ID
 
 We may eventually provide a POST /sync endpoint, which would take all todos on the client as well as the client's old cache, merge them with the back-end's copy, and send back a merged list of todos to the client. This would reduce the amount of client-side logic and provide resistance against network failures, which may cause unexpected behaviour.
 
+## [POST /register](#post-register)
+
+Register a new Cerulean account. Bienvenue !
+
+### [Parameters](#post-register-parameters)
+
+| Name       | Type    | In    | Description                                             |
+| ---------- | ------- | ----- | ------------------------------------------------------- |
+| `username` | string  | body  | A username to register with, not already registered.    |
+| `email`    | string  | body  | A valid email to register with, not already registered. |
+| `password` | string  | body  | The password to register with. Minimum length: 8.       |
+| `cookie`   | boolean | query | Optional: Set to `false` to avoid getting `Set-Cookie: cerulean_token=` |
+
+### [Response](#post-register-response)
+
+```json
+{"token":"JRPnrZPzeb8hi+RigUYZjIBWg4N1hImlI+AwKkfi4fk"}
+```
+
 ## [POST /login](#post-login)
 
 Log into the Cerulean API and retrieve a token.
@@ -45,9 +63,7 @@ Log into the Cerulean API and retrieve a token.
 ### [Response](#post-login-response)
 
 ```json
-{
-  "token": "JRPnrZPzeb8hi+RigUYZjIBWg4N1hImlI+AwKkfi4fk"
-}
+{"token":"JRPnrZPzeb8hi+RigUYZjIBWg4N1hImlI+AwKkfi4fk"}
 ```
 
 ## [POST /logout](#post-logout)
@@ -63,9 +79,7 @@ Logout and invaliate the current token.
 ### [Response](#post-logout-response)
 
 ```json
-{
-  "success": true
-}
+{"success":true}
 ```
 
 ## [POST /changepassword](#post-changepassword)
@@ -82,9 +96,23 @@ Change your current user's password. This also invalidates all tokens except you
 ### [Response](#post-changepassword-response)
 
 ```json
-{
-  "success": true
-}
+{"success":true}
+```
+
+## [POST /deleteaccount](#post-logout)
+
+Delete your account. Au revoir. This is irreversible and logs you out. If writing a client, make sure to cover any calls to this with a big warning dialog.
+
+### [Parameters](#post-deleteaccount-parameters)
+
+| Name | Type | In | Description |
+| ---- | ---- | -- | ----------- |
+| N/A
+
+### [Response](#post-deleteaccount-response)
+
+```json
+{"success":true}
 ```
 
 ## [GET /todos](#get-todos)

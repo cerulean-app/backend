@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"io"
 	"net/http"
 	"strings"
@@ -87,7 +88,7 @@ func deleteTodoHandler(w http.ResponseWriter, r *http.Request, username string, 
 		bson.M{"username": username, "todos": bson.M{"id": id}},
 		bson.M{"$pull": bson.M{"todos": bson.M{"id": id}}},
 	)
-	if result.Err() == mongo.ErrNoDocuments {
+	if errors.Is(result.Err(), mongo.ErrNoDocuments) {
 		http.Error(w, `{"error":"Todo not found!"}`, http.StatusNotFound)
 		return
 	} else if result.Err() != nil {
@@ -151,7 +152,7 @@ func patchTodoHandler(w http.ResponseWriter, r *http.Request, username string, i
 		mongoCtx, bson.M{"username": username, "todos.id": id}, update,
 		&options.FindOneAndUpdateOptions{ReturnDocument: &after},
 	)
-	if result.Err() == mongo.ErrNoDocuments {
+	if errors.Is(result.Err(), mongo.ErrNoDocuments) {
 		http.Error(w, `{"error":"Todo not found!"}`, http.StatusNotFound)
 		return
 	} else if result.Err() != nil {
