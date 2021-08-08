@@ -142,9 +142,10 @@ func registerHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, `{"error":"Internal Server Error!"}`, http.StatusInternalServerError)
 		return
 	}
-	// Validate password and email.
-	emailRegex, err := regexp.Compile(`^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$`)
-	if err != nil {
+	// Validate username, password and email.
+	nameRegex, err := regexp.Compile(`^[a-zA-Z0-9_]{4,}$`)
+	emailRegex, emailErr := regexp.Compile(`^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$`)
+	if err != nil || emailErr != nil {
 		http.Error(w, `{"error":"Internal Server Error!"}`, http.StatusInternalServerError)
 		return
 	} else if len(registerData.Password) < 8 {
@@ -152,6 +153,9 @@ func registerHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	} else if !emailRegex.MatchString(registerData.Email) {
 		http.Error(w, `{"error":"Invalid email provided!"}`, http.StatusBadRequest)
+		return
+	} else if !nameRegex.MatchString(registerData.Username) {
+		http.Error(w, `{"error":"Invalid username provided!"}`, http.StatusBadRequest)
 		return
 	}
 	saltBytes, err := generateToken()
@@ -317,6 +321,9 @@ func changePasswordHandler(w http.ResponseWriter, r *http.Request, username stri
 	err = json.Unmarshal(body, &passwordData)
 	if err != nil || passwordData.NewPassword == "" || passwordData.CurrentPassword == "" {
 		http.Error(w, `{"error":"Invalid body sent!"}`, http.StatusBadRequest)
+		return
+	} else if len(passwordData.NewPassword) < 8 {
+		http.Error(w, `{"error":"Minimum password length: 8"}`, http.StatusBadRequest)
 		return
 	}
 	result := database.Collection("users").FindOne(mongoCtx, bson.M{"username": username})

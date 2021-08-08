@@ -1,5 +1,7 @@
 # Cerulean REST API Documentation
 
+Welcome to the documentation for Cerulean's REST API! The REST API is open for everyone to use and write their own custom clients if you feel that our clients are inadequate! We also maintain this documentation to help ease the development of our own clients. This documentation is kept in-tree and updated with the latest commit so that you can go through git history for older versions. [Report any issues with the documentation here.](https://github.com/cerulean-app/backend/issues)
+
 **This REST API is still a work in progress!** Some endpoints and features have not been finalised. If you are writing a Cerulean client, you will need to keep track of the current API until beta versions are released. Additionally, some of these endpoints have not yet been implemented in the back-end.
 
 - `POST /todos/order`
@@ -9,7 +11,7 @@
 - `POST /forgotpassword`
 - `POST /verifyuser`
 
-All dates sent to and fro from the REST API are encoded as `ISO 8601` strings as emitted by `Date#toISOString` in JavaScript.
+All dates sent to and fro from the REST API are encoded as `ISO 8601` strings as emitted by `Date#toISOString` in JavaScript. All request and response bodies, if present, are formatted in JSON.
 
 ## [Authentication Scheme](#authentication-scheme)
 
@@ -29,20 +31,26 @@ The ideal way is to cache the todos on the client and create an array of todo ID
 
 We may eventually provide a POST /sync endpoint, which would take all todos on the client as well as the client's old cache, merge them with the back-end's copy, and send back a merged list of todos to the client. This would reduce the amount of client-side logic and provide resistance against network failures, which may cause unexpected behaviour.
 
+## [Errors](#errors)
+
+Each endpoint may return certain errors, which have been documented in the description for their response. In addition to the documented errors, every endpoint could return a 5xx HTTP error code which should be handled correctly by the client, and errors like 405 Method Not Allowed and 400 Bad Requests if the client is sending invalid requests which do not comply with the parameters. Apart from `/login` and `/register`, all endpoints require the `cerulean_token` cookie (set by `/login` if `cookie` query param is not `false`) or an `Authorization` header, containing a valid session access token, else you will receive 401 Unauthorized.
+
 ## [POST /register](#post-register)
 
 Register a new Cerulean account. Bienvenue !
 
 ### [Parameters](#post-register-parameters)
 
-| Name       | Type    | In    | Description                                             |
-| ---------- | ------- | ----- | ------------------------------------------------------- |
-| `username` | string  | body  | A username to register with, not already registered.    |
-| `email`    | string  | body  | A valid email to register with, not already registered. |
-| `password` | string  | body  | The password to register with. Minimum length: 8.       |
+| Name       | Type    | In    | Description                                                             |
+| ---------- | ------- | ----- | ----------------------------------------------------------------------- |
+| `username` | string  | body  | An username (a-z0-9_) to register with, not already used. Min length: 4 |
+| `email`    | string  | body  | A valid email to register with, not already registered.                 |
+| `password` | string  | body  | The password to register with. Minimum length: 8.                       |
 | `cookie`   | boolean | query | Optional: Set to `false` to avoid getting `Set-Cookie: cerulean_token=` |
 
 ### [Response](#post-register-response)
+
+Possible errors include 409 Conflict if someone has an account with the existing username and email, and 400 Bad Request if the username, email or password fail validation.
 
 ```json
 {"token":"JRPnrZPzeb8hi+RigUYZjIBWg4N1hImlI+AwKkfi4fk"}
@@ -61,6 +69,8 @@ Log into the Cerulean API and retrieve a token.
 | `cookie`   | boolean | query | Optional: Set to `false` to avoid getting `Set-Cookie: cerulean_token=` |
 
 ### [Response](#post-login-response)
+
+Possible errors include 401 Unauthorized if your username or password is invalid.
 
 ```json
 {"token":"JRPnrZPzeb8hi+RigUYZjIBWg4N1hImlI+AwKkfi4fk"}
@@ -88,12 +98,14 @@ Change your current user's password. This also invalidates all tokens except you
 
 ### [Parameters](#post-changepassword-parameters)
 
-| Name              | Type   | In   | Description                       |
-| ----------------- | ------ | ---- | --------------------------------- |
-| `currentPassword` | string | body | The old password.                 |
-| `newPassword`     | string | body | The new password you wish to set. |
+| Name              | Type   | In   | Description                                         |
+| ----------------- | ------ | ---- | --------------------------------------------------- |
+| `currentPassword` | string | body | The old password.                                   |
+| `newPassword`     | string | body | The new password you wish to set. Minimum length: 8 |
 
 ### [Response](#post-changepassword-response)
+
+Possible errors include 400 Bad Request if your new password is less than 8 characters and 401 Unauthorized if the provided current password is incorrect.
 
 ```json
 {"success":true}
@@ -163,15 +175,17 @@ Create a new todo item for the current user.
 
 ### [Parameters](#post-todo-parameters)
 
-| Name        | Type    | In    | Description                      |
-| ----------  | ------- | ----- | -------------------------------- |
-| name        | string  | body  | The todo name.                   |
-| done        | boolean | body  | Whether the todo is done or not. |
-| description | string  | body  | Optional: The todo description.  |
+| Name        | Type    | In    | Description                           |
+| ----------  | ------- | ----- | ------------------------------------- |
+| name        | string  | body  | The todo name.                        |
+| done        | boolean | body  | Optional: If the todo is done or not. |
+| description | string  | body  | Optional: The todo description.       |
+| dueDate     | date    | body  | Optional: The todo's due date.        |
 | repeating   | string  | body  | Optional: The todo is repeating. Enum of "daily", "weekly", "monthly", "yearly". |
-| dueDate     | date    | body  | Optional: The todo's due date.   |
 
 ### [Response](#post-todo-response)
+
+Possible errors include 400 Bad Request if your todo does not include a name or if the dueDate is incorrectly formatted.
 
 ```json
 {
@@ -196,6 +210,8 @@ Get one of the user's todo items. [Read the parameters for POST /todo to help un
 | id   | string  | path | The ID of the todo item to get. |
 
 ### [Response](#get-todo-id-response)
+
+Possible errors include 404 Not Found if a todo with the given ID doesn't exist.
 
 ```json
 {
@@ -226,6 +242,8 @@ Edit one of the user's todo items. [Read the parameters for POST /todo to help u
 
 ### [Response](#patch-todo-id-response)
 
+Possible errors include 404 Not Found if a todo with the given ID doesn't exist and 400 Bad Request if the dueDate is incorrectly formatted.
+
 ```json
 {
   "id": "507f191e810c19729de860ea",
@@ -251,6 +269,8 @@ Delete one of the user's todo items. [Read the parameters for POST /todo to help
 | id   | string  | path | The ID of the todo item to get. |
 
 ### [Response](#delete-todo-id-response)
+
+Possible errors include 404 Not Found if a todo with the given ID doesn't exist.
 
 ```json
 {

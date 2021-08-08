@@ -13,6 +13,7 @@ var UsersCollectionSchema = bson.M{
 		"username": bson.M{
 			"bsonType":  "string",
 			"minLength": 4,
+			"pattern":   "^[a-zA-Z0-9_]{4,}$",
 		},
 		"password": bson.M{
 			"bsonType":  "string",
