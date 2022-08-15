@@ -8,7 +8,7 @@ Cerulean provides a REST API for you to be able to write client applications and
 
 ## Setup
 
-If you would like to setup your own Cerulean backend, first compile Cerulean using `go build` and then run `./cerulean-backend` (`.\cerulean-backend.exe` on Windows) after creating the `config.json` file. The `config.json` should look like this:
+If you would like to setup your own Cerulean backend, first compile Cerulean using `go build` and then run `./backend` (`.\backend.exe` on Windows) after creating the `config.json` file. The `config.json` should look like this:
 
 ```json
 {

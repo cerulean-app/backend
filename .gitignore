@@ -1,4 +1,5 @@
 config.json
+/backend
 
 # Binaries for programs and plugins
 *.exe

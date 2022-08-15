@@ -18,7 +18,7 @@ import (
 )
 
 func hashPassword(password string, salt string) string {
-	return hex.EncodeToString(argon2.IDKey([]byte(password), []byte(salt), 18, 32*1024, 4, 32))
+	return hex.EncodeToString(argon2.IDKey([]byte(password), []byte(salt), 1, 50*1024, 4, 32))
 }
 
 func generateToken() ([]byte, error) {

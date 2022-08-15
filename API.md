@@ -11,7 +11,7 @@ Welcome to the documentation for Cerulean's REST API! The REST API is open for e
 - `POST /forgotpassword`
 - `POST /verifyuser`
 
-All dates sent to and fro from the REST API are encoded as `ISO 8601` strings as emitted by `Date#toISOString` in JavaScript. All request and response bodies, if present, are formatted in JSON.
+All dates sent to and fro from the REST API are encoded as ISO 8601 strings as emitted by `Date#toISOString` in JavaScript. All request and response bodies, if present, are formatted in JSON.
 
 ## [Authentication Scheme](#authentication-scheme)
 
