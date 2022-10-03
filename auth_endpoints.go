@@ -185,9 +185,9 @@ func registerHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	token := base64.StdEncoding.EncodeToString(bytes)
 	_, err = database.Collection("tokens").InsertOne(mongoCtx, bson.M{
-		"token":    token,
-		"username": registerData.Username,
-		"issuedOn": time.Now().UTC(),
+		"accessToken": token,
+		"username":    registerData.Username,
+		"issuedOn":    time.Now().UTC(),
 	})
 	if err != nil {
 		http.Error(w, `{"error":"Internal Server Error!"}`, http.StatusInternalServerError)
