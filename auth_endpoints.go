@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"crypto/rand"
 	"encoding/base64"
 	"encoding/hex"
@@ -185,11 +186,12 @@ func registerHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	token := base64.StdEncoding.EncodeToString(bytes)
 	_, err = database.Collection("tokens").InsertOne(mongoCtx, bson.M{
-		"accessToken": token,
-		"username":    registerData.Username,
-		"issuedOn":    time.Now().UTC(),
+		"token":    token,
+		"username": registerData.Username,
+		"issuedOn": time.Now().UTC(),
 	})
 	if err != nil {
+		fmt.Println(err)
 		http.Error(w, `{"error":"Internal Server Error!"}`, http.StatusInternalServerError)
 		return
 	}

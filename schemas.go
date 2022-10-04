@@ -75,7 +75,7 @@ type TodoDocument struct {
 }
 
 var TokensCollectionSchema = bson.M{
-	"required": []string{"username", "accessToken", "issuedOn"},
+	"required": []string{"username", "token", "issuedOn"},
 	"properties": bson.M{
 		"token":    bson.M{"bsonType": "string", "minLength": 42},
 		"username": bson.M{"bsonType": "string", "minLength": 4},
