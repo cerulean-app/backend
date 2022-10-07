@@ -33,13 +33,15 @@ We may eventually provide a POST /sync endpoint, which would take all todos on t
 
 ## [Errors](#errors)
 
-Each endpoint may return certain errors, which have been documented in the description for their response. In addition to the documented errors, every endpoint could return a 5xx HTTP error code which should be handled correctly by the client, and errors like 405 Method Not Allowed and 400 Bad Requests if the client is sending invalid requests which do not comply with the parameters. Apart from `/login` and `/register`, all endpoints require the `cerulean_token` cookie (set by `/login` if `cookie` query param is not `false`) or an `Authorization` header, containing a valid session access token, else you will receive 401 Unauthorized.
+Each endpoint may return certain errors, which have been documented in the description for their response. In addition to the documented errors, every endpoint could return a 5xx HTTP error code which should be handled correctly by the client, and 405 Method Not Allowed and 400 Bad Request if the client is sending invalid requests which do not comply with the parameters. Apart from `/login` and `/register`, all endpoints require the `cerulean_token` cookie (set by `/login` if `cookie` query param is not `false`) or an `Authorization` header, containing a valid session access token, else you will receive 401 Unauthorized.
+
+When there is an error, the server will reply with an object containing `error`, a string with an error message in English (UK). This message is intended to be shown directly to the user. We will eventually add a `code` or `lang` field to the response with corresponding documentation for proper i18n support.
 
 ## [POST /register](#post-register)
 
 Register a new Cerulean account. Bienvenue !
 
-### [Parameters](#post-register-parameters)
+### <a name="post-register-parameters">[Parameters](#post-register-parameters)</a>
 
 | Name       | Type    | In    | Description                                                                 |
 | ---------- | ------- | ----- | --------------------------------------------------------------------------- |
@@ -48,7 +50,7 @@ Register a new Cerulean account. Bienvenue !
 | `password` | string  | body  | The password to register with. Minimum length: 8.                           |
 | `cookie`   | boolean | query | Optional: Set to `false` to avoid getting `Set-Cookie: cerulean_token=`     |
 
-### [Response](#post-register-response)
+### <a name="post-register-response">[Response](#post-register-response)</a>
 
 Possible errors include 409 Conflict if someone has an account with the existing username and email, and 400 Bad Request if the username, email or password fail validation.
 
@@ -60,7 +62,7 @@ Possible errors include 409 Conflict if someone has an account with the existing
 
 Log into the Cerulean API and retrieve a token.
 
-### [Parameters](#post-login-parameters)
+### <a name="post-login-parameters">[Parameters](#post-login-parameters)</a>
 
 | Name       | Type    | In    | Description                 |
 | ---------- | ------- | ----- | --------------------------- |
@@ -68,7 +70,7 @@ Log into the Cerulean API and retrieve a token.
 | `password` | string  | body  | The password to login with. |
 | `cookie`   | boolean | query | Optional: Set to `false` to avoid getting `Set-Cookie: cerulean_token=` |
 
-### [Response](#post-login-response)
+### <a name="post-login-response">[Response](#post-login-response)</a>
 
 Possible errors include 401 Unauthorized if your username or password is invalid.
 
@@ -80,13 +82,13 @@ Possible errors include 401 Unauthorized if your username or password is invalid
 
 Logout and invaliate the current token.
 
-### [Parameters](#post-logout-parameters)
+### <a name="post-logout-parameters">[Parameters](#post-logout-parameters)</a>
 
 | Name | Type | In | Description |
 | ---- | ---- | -- | ----------- |
 | N/A
 
-### [Response](#post-logout-response)
+### <a name="post-logout-response">[Response](#post-logout-response)</a>
 
 ```json
 {"success":true}
@@ -96,14 +98,14 @@ Logout and invaliate the current token.
 
 Change your current user's password. This also invalidates all tokens except your current one.
 
-### [Parameters](#post-changepassword-parameters)
+### <a name="post-changepassword-parameters">[Parameters](#post-changepassword-parameters)</a>
 
 | Name              | Type   | In   | Description                                         |
 | ----------------- | ------ | ---- | --------------------------------------------------- |
 | `currentPassword` | string | body | The old password.                                   |
 | `newPassword`     | string | body | The new password you wish to set. Minimum length: 8 |
 
-### [Response](#post-changepassword-response)
+### <a name="post-changepassword-response">[Response](#post-changepassword-response)</a>
 
 Possible errors include 400 Bad Request if your new password is less than 8 characters and 401 Unauthorized if the provided current password is incorrect.
 
@@ -111,17 +113,17 @@ Possible errors include 400 Bad Request if your new password is less than 8 char
 {"success":true}
 ```
 
-## [POST /deleteaccount](#post-logout)
+## [POST /deleteaccount](#post-deleteaccount)
 
 Delete your account. Au revoir. This is irreversible and logs you out. If writing a client, make sure to cover any calls to this with a big warning dialog.
 
-### [Parameters](#post-deleteaccount-parameters)
+### <a name="post-deleteaccount-parameters">[Parameters](#post-deleteaccount-parameters)</a>
 
 | Name | Type | In | Description |
 | ---- | ---- | -- | ----------- |
 | N/A
 
-### [Response](#post-deleteaccount-response)
+### <a name="post-deleteaccount-response">[Response](#post-deleteaccount-response)</a>
 
 ```json
 {"success":true}
@@ -131,13 +133,13 @@ Delete your account. Au revoir. This is irreversible and logs you out. If writin
 
 Get all of the user's todo items. [Read the parameters for POST /todo to help understand the response of this endpoint fully.](#post-todo-parameters) `id`, `createdAt` and `updatedAt` are created by the server and cannot be edited directly.
 
-### [Parameters](#get-todos-parameters)
+### <a name="get-todos-parameters">[Parameters](#get-todos-parameters)</a>
 
 | Name | Type | In | Description |
 | ---- | ---- | -- | ----------- |
 | N/A
 
-### [Response](#get-todos-response)
+### <a name="get-todos-response">[Response](#get-todos-response)</a>
 
 ```json
 [
@@ -173,7 +175,7 @@ Get all of the user's todo items. [Read the parameters for POST /todo to help un
 
 Create a new todo item for the current user.
 
-### [Parameters](#post-todo-parameters)
+### <a name="post-todo-parameters">[Parameters](#post-todo-parameters)</a>
 
 | Name        | Type    | In    | Description                           |
 | ----------  | ------- | ----- | ------------------------------------- |
@@ -183,7 +185,7 @@ Create a new todo item for the current user.
 | dueDate     | date    | body  | Optional: The todo's due date.        |
 | repeating   | string  | body  | Optional: The todo is repeating. Enum of "daily", "weekly", "monthly", "yearly". |
 
-### [Response](#post-todo-response)
+### <a name="post-todo-response">[Response](#post-todo-response)</a>
 
 Possible errors include 400 Bad Request if your todo does not include a name or if the dueDate is incorrectly formatted.
 
@@ -199,17 +201,17 @@ Possible errors include 400 Bad Request if your todo does not include a name or 
 }
 ```
 
-## [GET /todo/:id](#get-todo-id)
+## [GET /todo/:id](#get-todoid)
 
 Get one of the user's todo items. [Read the parameters for POST /todo to help understand the response of this endpoint fully.](#post-todo-parameters) `id`, `createdAt` and `updatedAt` are created by the server and cannot be edited directly.
 
-### [Parameters](#get-todo-id-parameters)
+### <a name="get-todo-id-parameters">[Parameters](#get-todo-id-parameters)</a>
 
 | Name | Type    | In   | Description                     |
 | ---- | ------- | ---- | ------------------------------- |
 | id   | string  | path | The ID of the todo item to get. |
 
-### [Response](#get-todo-id-response)
+### <a name="get-todo-id-response">[Response](#get-todo-id-response)</a>
 
 Possible errors include 404 Not Found if a todo with the given ID doesn't exist.
 
@@ -225,11 +227,11 @@ Possible errors include 404 Not Found if a todo with the given ID doesn't exist.
 }
 ```
 
-## [PATCH /todo/:id](#patch-todo-id)
+## [PATCH /todo/:id](#patch-todoid)
 
 Edit one of the user's todo items. [Read the parameters for POST /todo to help understand the response of this endpoint fully.](#post-todo-parameters) `id`, `createdAt` and `updatedAt` are created by the server and cannot be edited directly.
 
-### [Parameters](#patch-todo-id-parameters)
+### <a name="patch-todo-id-parameters">[Parameters](#patch-todo-id-parameters)</a>
 
 | Name        | Type    | In    | Description                                |
 | ----------  | ------- | ----- | ------------------------------------------ |
@@ -240,7 +242,7 @@ Edit one of the user's todo items. [Read the parameters for POST /todo to help u
 | repeating   | string  | body  | Optional: The todo is repeating. Enum of "daily", "weekly", "monthly", "yearly". |
 | dueDate     | date    | body  | Optional: The todo's due date.             |
 
-### [Response](#patch-todo-id-response)
+### <a name="patch-todo-id-response">[Response](#patch-todo-id-response)</a>
 
 Possible errors include 404 Not Found if a todo with the given ID doesn't exist and 400 Bad Request if the dueDate is incorrectly formatted.
 
@@ -258,17 +260,17 @@ Possible errors include 404 Not Found if a todo with the given ID doesn't exist 
 
 Note: The endpoint returns the updated todo item.
 
-## [DELETE /todo/:id](#delete-todo-id)
+## [DELETE /todo/:id](#delete-todoid)
 
 Delete one of the user's todo items. [Read the parameters for POST /todo to help understand the response of this endpoint fully.](#post-todo-parameters) `id`, `createdAt` and `updatedAt` are created by the server and cannot be edited directly.
 
-### [Parameters](#delete-todo-id-parameters)
+### <a name="delete-todo-id-parameters">[Parameters](#delete-todo-id-parameters)</a>
 
 | Name | Type    | In   | Description                     |
 | ---- | ------- | ---- | ------------------------------- |
 | id   | string  | path | The ID of the todo item to get. |
 
-### [Response](#delete-todo-id-response)
+### <a name="delete-todo-id-response">[Response](#delete-todo-id-response)</a>
 
 Possible errors include 404 Not Found if a todo with the given ID doesn't exist.
 
