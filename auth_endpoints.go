@@ -150,7 +150,7 @@ func registerHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// Validate username, password and email.
-	nameRegex, err := regexp.Compile(`^[a-zA-Z0-9_]{4,}$`)
+	nameRegex, err := regexp.Compile(`^[a-zA-Z0-9_]{4,16}$`)
 	emailRegex, emailErr := regexp.Compile(`^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$`)
 	if err != nil || emailErr != nil {
 		log.Println(err, emailErr)
@@ -159,7 +159,7 @@ func registerHandler(w http.ResponseWriter, r *http.Request) {
 	} else if len(registerData.Password) < 8 {
 		http.Error(w, `{"error":"Minimum password length: 8"}`, http.StatusBadRequest)
 		return
-	} else if !emailRegex.MatchString(registerData.Email) {
+	} else if !emailRegex.MatchString(registerData.Email) || len(registerData.Email) > 254 {
 		http.Error(w, `{"error":"Invalid email provided!"}`, http.StatusBadRequest)
 		return
 	} else if !nameRegex.MatchString(registerData.Username) {

@@ -13,7 +13,8 @@ var UsersCollectionSchema = bson.M{
 		"username": bson.M{
 			"bsonType":  "string",
 			"minLength": 4,
-			"pattern":   "^[a-zA-Z0-9_]{4,}$",
+			"maxLength": 16,
+			"pattern":   "^[a-zA-Z0-9_]{4,16}$",
 		},
 		"password": bson.M{
 			"bsonType":  "string",
@@ -26,6 +27,7 @@ var UsersCollectionSchema = bson.M{
 		"email": bson.M{
 			"bsonType":  "string",
 			"minLength": 4,
+			"maxLength": 254,
 			"pattern":   "^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\\.[a-zA-Z0-9-.]+$",
 		},
 		"verified": bson.M{

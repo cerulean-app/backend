@@ -40,6 +40,7 @@ func main() {
 	if err != nil {
 		log.Panicln(err)
 	}
+
 	// Connect to MongoDB.
 	mongoCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()

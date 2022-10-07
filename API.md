@@ -45,7 +45,7 @@ Register a new Cerulean account. Bienvenue !
 
 | Name       | Type    | In    | Description                                                                 |
 | ---------- | ------- | ----- | --------------------------------------------------------------------------- |
-| `username` | string  | body  | A username (a-zA-Z0-9_) to register with, not already used. Min length: 4   |
+| `username` | string  | body  | A username (a-zA-Z0-9_) to register with, not already used, of length 4-16. |
 | `email`    | string  | body  | A valid email to register with, not already registered.                     |
 | `password` | string  | body  | The password to register with. Minimum length: 8.                           |
 | `cookie`   | boolean | query | Optional: Set to `false` to avoid getting `Set-Cookie: cerulean_token=`     |
