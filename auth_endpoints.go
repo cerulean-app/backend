@@ -1,13 +1,13 @@
 package main
 
 import (
-	"fmt"
 	"crypto/rand"
 	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"io"
+	"log"
 	"net/http"
 	"regexp"
 	"strings"
@@ -58,6 +58,7 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, `{"error":"Invalid username or password!"}`, http.StatusUnauthorized)
 		return
 	} else if result.Err() != nil {
+		log.Println(result.Err())
 		http.Error(w, `{"error":"Internal Server Error!"}`, http.StatusInternalServerError)
 		return
 	}
@@ -65,6 +66,7 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 	var user UserDocument
 	err = result.Decode(&user)
 	if err != nil {
+		log.Println(err)
 		http.Error(w, `{"error":"Internal Server Error!"}`, http.StatusInternalServerError)
 		return
 	} else if hashPassword(loginData.Password, user.Salt) != user.Password {
@@ -76,6 +78,7 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	bytes, err := generateToken()
 	if err != nil {
+		log.Println(err)
 		http.Error(w, `{"error":"Internal Server Error!"}`, http.StatusInternalServerError)
 		return
 	}
@@ -86,6 +89,7 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 		"issuedOn": time.Now().UTC(),
 	})
 	if err != nil {
+		log.Println(err)
 		http.Error(w, `{"error":"Internal Server Error!"}`, http.StatusInternalServerError)
 		return
 	}
@@ -132,6 +136,7 @@ func registerHandler(w http.ResponseWriter, r *http.Request) {
 		var user UserDocument
 		err = result.Decode(&user)
 		if err != nil {
+			log.Println(err)
 			http.Error(w, `{"error":"Internal Server Error!"}`, http.StatusInternalServerError)
 		} else if user.Email == registerData.Email {
 			http.Error(w, `{"error":"A user with this email already exists!"}`, http.StatusConflict)
@@ -140,6 +145,7 @@ func registerHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	} else if !errors.Is(result.Err(), mongo.ErrNoDocuments) {
+		log.Println(err)
 		http.Error(w, `{"error":"Internal Server Error!"}`, http.StatusInternalServerError)
 		return
 	}
@@ -147,6 +153,7 @@ func registerHandler(w http.ResponseWriter, r *http.Request) {
 	nameRegex, err := regexp.Compile(`^[a-zA-Z0-9_]{4,}$`)
 	emailRegex, emailErr := regexp.Compile(`^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$`)
 	if err != nil || emailErr != nil {
+		log.Println(err, emailErr)
 		http.Error(w, `{"error":"Internal Server Error!"}`, http.StatusInternalServerError)
 		return
 	} else if len(registerData.Password) < 8 {
@@ -161,6 +168,7 @@ func registerHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	saltBytes, err := generateToken()
 	if err != nil {
+		log.Println(err)
 		http.Error(w, `{"error":"Internal Server Error!"}`, http.StatusInternalServerError)
 		return
 	}
@@ -175,12 +183,14 @@ func registerHandler(w http.ResponseWriter, r *http.Request) {
 		"todos":      bson.A{},
 	})
 	if err != nil {
+		log.Println(err)
 		http.Error(w, `{"error":"Internal Server Error!"}`, http.StatusInternalServerError)
 		return
 	}
 	// Log the user in for now until email verification is added.
 	bytes, err := generateToken()
 	if err != nil {
+		log.Println(err)
 		http.Error(w, `{"error":"Internal Server Error!"}`, http.StatusInternalServerError)
 		return
 	}
@@ -191,7 +201,7 @@ func registerHandler(w http.ResponseWriter, r *http.Request) {
 		"issuedOn": time.Now().UTC(),
 	})
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 		http.Error(w, `{"error":"Internal Server Error!"}`, http.StatusInternalServerError)
 		return
 	}
@@ -257,6 +267,7 @@ func handleLoginCheck(
 		}
 		username, err := isLoggedIn(token)
 		if err != nil {
+			log.Println(err)
 			http.Error(w, `{"error":"Internal Server Error!"}`, http.StatusInternalServerError)
 			return
 		} else if username == "" {
@@ -286,6 +297,7 @@ func logoutHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	result, err := database.Collection("tokens").DeleteOne(mongoCtx, bson.M{"token": token})
 	if err != nil {
+		log.Println(err)
 		http.Error(w, `{"error":"Internal Server Error!"}`, http.StatusInternalServerError)
 		return
 	} else if result.DeletedCount == 0 {
@@ -330,12 +342,14 @@ func changePasswordHandler(w http.ResponseWriter, r *http.Request, username stri
 	}
 	result := database.Collection("users").FindOne(mongoCtx, bson.M{"username": username})
 	if result.Err() != nil {
+		log.Println(result.Err())
 		http.Error(w, `{"error":"Internal Server Error!"}`, http.StatusInternalServerError)
 		return
 	}
 	var user UserDocument
 	err = result.Decode(&user)
 	if err != nil {
+		log.Println(err)
 		http.Error(w, `{"error":"Internal Server Error!"}`, http.StatusInternalServerError)
 		return
 	} else if hashPassword(passwordData.CurrentPassword, user.Salt) != user.Password {
@@ -344,6 +358,7 @@ func changePasswordHandler(w http.ResponseWriter, r *http.Request, username stri
 	}
 	saltBytes, err := generateToken()
 	if err != nil {
+		log.Println(err)
 		http.Error(w, `{"error":"Internal Server Error!"}`, http.StatusInternalServerError)
 		return
 	}
@@ -354,6 +369,7 @@ func changePasswordHandler(w http.ResponseWriter, r *http.Request, username stri
 		}},
 	)
 	if err != nil || updateResult.ModifiedCount != 1 {
+		log.Println(err, updateResult.ModifiedCount)
 		http.Error(w, `{"error":"Internal Server Error!"}`, http.StatusInternalServerError)
 		return
 	}
@@ -367,11 +383,13 @@ func deleteAccountHandler(w http.ResponseWriter, r *http.Request, username strin
 	}
 	result, err := database.Collection("users").DeleteOne(mongoCtx, bson.M{"username": username})
 	if err != nil || result.DeletedCount != 1 {
+		log.Println(err, result.DeletedCount)
 		http.Error(w, `{"error":"Internal Server Error!"}`, http.StatusInternalServerError)
 		return
 	}
 	result, err = database.Collection("tokens").DeleteMany(mongoCtx, bson.M{"username": username})
 	if err != nil || result.DeletedCount <= 0 {
+		log.Println(err, result.DeletedCount)
 		http.Error(w, `{"error":"Internal Server Error!"}`, http.StatusInternalServerError)
 		return
 	}

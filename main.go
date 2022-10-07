@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"os"
 	"time"
@@ -24,26 +25,31 @@ type Config struct {
 	MongoUri string `json:"mongoUri"`
 }
 
+var infoLog = log.New(os.Stdout, "info: ", log.Ldate|log.Ltime)
+
 func main() {
+	log.SetPrefix("error: ")
+	log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
+
 	// Read config.
 	configFile, err := os.ReadFile("config.json")
 	if err != nil {
-		panic(err)
+		log.Panicln(err)
 	}
 	err = json.Unmarshal(configFile, &config)
 	if err != nil {
-		panic(err)
+		log.Panicln(err)
 	}
 	// Connect to MongoDB.
 	mongoCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	mongodb, err = mongo.Connect(mongoCtx, options.Client().ApplyURI(config.MongoUri))
 	if err != nil {
-		panic(err)
+		log.Panicln(err)
 	}
 	defer func() {
 		if err = mongodb.Disconnect(mongoCtx); err != nil {
-			panic(err)
+			log.Panicln(err)
 		}
 	}()
 
@@ -55,7 +61,7 @@ func main() {
 	database.CreateCollection(mongoCtx, "tokens", &options.CreateCollectionOptions{
 		Validator: bson.M{"$jsonSchema": TokensCollectionSchema},
 	})
-	fmt.Println("Successfully connected to MongoDB.")
+	infoLog.Println("Successfully connected to MongoDB.")
 
 	// Create CORS handler wrapper.
 	cors := handlers.CORS(
@@ -75,7 +81,7 @@ func main() {
 	http.Handle("/todo/", cors(http.HandlerFunc(handleLoginCheck(todoHandler, []string{"DELETE", "PATCH", "GET"}))))
 
 	// Start listening on specified port.
-	fmt.Printf("Listening on port %d.\n", config.Port)
-	panic(http.ListenAndServe(fmt.Sprintf(":%d", config.Port), nil))
+	infoLog.Printf("Listening on port %d.\n", config.Port)
+	log.Panicln(http.ListenAndServe(fmt.Sprintf(":%d", config.Port), nil))
 	// if config.HTTPS.Enabled { http.ListenAndServeTLS(config.HTTPS.Cert, config.HTTPS.Key) }
 }

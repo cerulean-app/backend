@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
+	"log"
 	"net/http"
 	"strings"
 	"time"
@@ -60,6 +61,7 @@ func createTodoHandler(w http.ResponseWriter, r *http.Request, username string, 
 		mongoCtx, bson.M{"username": username}, bson.M{"$push": bson.M{"todos": todoDocument}},
 	)
 	if err != nil || result.MatchedCount != 1 {
+		log.Println(err, result.MatchedCount)
 		http.Error(w, `{"error":"Internal Server Error!"}`, http.StatusInternalServerError)
 		return
 	}
@@ -92,12 +94,14 @@ func deleteTodoHandler(w http.ResponseWriter, r *http.Request, username string, 
 		http.Error(w, `{"error":"Todo not found!"}`, http.StatusNotFound)
 		return
 	} else if result.Err() != nil {
+		log.Println(result.Err())
 		http.Error(w, `{"error":"Internal Server Error!"}`, http.StatusInternalServerError)
 		return
 	}
 	var user UserDocument
 	err := result.Decode(&user)
 	if err != nil {
+		log.Println(err)
 		http.Error(w, `{"error":"Internal Server Error!"}`, http.StatusInternalServerError)
 		return
 	}
@@ -109,6 +113,7 @@ func deleteTodoHandler(w http.ResponseWriter, r *http.Request, username string, 
 		}
 	}
 	if foundTodo == nil {
+		log.Println("foundTodo in deleteTodo is nil for user: " + username + " and ID: " + id)
 		http.Error(w, `{"error":"Internal Server Error!"}`, http.StatusInternalServerError)
 		return
 	}
@@ -156,12 +161,14 @@ func patchTodoHandler(w http.ResponseWriter, r *http.Request, username string, i
 		http.Error(w, `{"error":"Todo not found!"}`, http.StatusNotFound)
 		return
 	} else if result.Err() != nil {
+		log.Println(result.Err())
 		http.Error(w, `{"error":"Internal Server Error!"}`, http.StatusNotFound)
 		return
 	}
 	var user UserDocument
 	err = result.Decode(&user)
 	if err != nil {
+		log.Println(err)
 		http.Error(w, `{"error":"Internal Server Error!"}`, http.StatusInternalServerError)
 		return
 	}
@@ -173,6 +180,7 @@ func patchTodoHandler(w http.ResponseWriter, r *http.Request, username string, i
 		}
 	}
 	if foundTodo == nil {
+		log.Println("foundTodo in deleteTodo is nil for user: " + username + " and ID: " + id)
 		http.Error(w, `{"error":"Internal Server Error!"}`, http.StatusInternalServerError)
 		return
 	}
@@ -182,12 +190,14 @@ func patchTodoHandler(w http.ResponseWriter, r *http.Request, username string, i
 func getTodoHandler(w http.ResponseWriter, r *http.Request, username string, id string) {
 	result := database.Collection("users").FindOne(mongoCtx, bson.M{"username": username})
 	if result.Err() != nil {
+		log.Println(result.Err())
 		http.Error(w, `{"error":"Internal Server Error!"}`, http.StatusInternalServerError)
 		return
 	}
 	var user UserDocument
 	err := result.Decode(&user)
 	if err != nil {
+		log.Println(err)
 		http.Error(w, `{"error":"Internal Server Error!"}`, http.StatusInternalServerError)
 		return
 	}
@@ -203,12 +213,14 @@ func getTodoHandler(w http.ResponseWriter, r *http.Request, username string, id 
 func getTodosHandler(w http.ResponseWriter, r *http.Request, username string, token string) {
 	result := database.Collection("users").FindOne(mongoCtx, bson.M{"username": username})
 	if result.Err() != nil {
+		log.Println(result.Err())
 		http.Error(w, `{"error":"Internal Server Error!"}`, http.StatusInternalServerError)
 		return
 	}
 	var user UserDocument
 	err := result.Decode(&user)
 	if err != nil {
+		log.Println(err)
 		http.Error(w, `{"error":"Internal Server Error!"}`, http.StatusInternalServerError)
 		return
 	}
