@@ -142,33 +142,35 @@ Get all of the user's todo items. [Read the parameters for POST /todo to help un
 ### <a name="get-todos-response">[Response](#get-todos-response)</a>
 
 ```json
-[
-  {
-    "id": "507f191e810c19729de860ea",
-    "name": "Buy milk",
-    "description": "Buy milk",
-    "done": false,
-    "repeating": "daily",
-    "createdAt": "2016-01-01T00:00:00Z",
-    "updatedAt": "2016-01-01T00:00:00Z"
-  },
-  {
-    "id": "507f1f77bcf86cd799439011",
-    "name": "Call Anna",
-    "done": false,
-    "createdAt": "2016-01-01T00:00:00Z",
-    "updatedAt": "2016-01-01T00:00:00Z"
-  },
-  {
-    "id": "54495ad94c934721ede76d90",
-    "name": "Review notes",
-    "description": "Check for grammatical errors",
-    "done": true,
-    "dueDate": "2016-01-02T00:00:00Z",
-    "createdAt": "2016-01-01T00:00:00Z",
-    "updatedAt": "2016-01-01T00:00:00Z"
-  }
-]
+{
+  "todos": [
+    {
+      "id": "507f191e810c19729de860ea",
+      "name": "Buy milk",
+      "description": "Buy milk",
+      "done": false,
+      "repeating": "daily",
+      "createdAt": "2016-01-01T00:00:00Z",
+      "updatedAt": "2016-01-01T00:00:00Z"
+    },
+    {
+      "id": "507f1f77bcf86cd799439011",
+      "name": "Call Anna",
+      "done": false,
+      "createdAt": "2016-01-01T00:00:00Z",
+      "updatedAt": "2016-01-01T00:00:00Z"
+    },
+    {
+      "id": "54495ad94c934721ede76d90",
+      "name": "Review notes",
+      "description": "Check for grammatical errors",
+      "done": true,
+      "dueDate": "2016-01-02T00:00:00Z",
+      "createdAt": "2016-01-01T00:00:00Z",
+      "updatedAt": "2016-01-01T00:00:00Z"
+    }
+  ]
+}
 ```
 
 ## [POST /todo](#post-todo)

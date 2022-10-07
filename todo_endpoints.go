@@ -212,5 +212,7 @@ func getTodosHandler(w http.ResponseWriter, r *http.Request, username string, to
 		http.Error(w, `{"error":"Internal Server Error!"}`, http.StatusInternalServerError)
 		return
 	}
-	json.NewEncoder(w).Encode(user.Todos)
+	json.NewEncoder(w).Encode(struct {
+		Todos []TodoDocument `json:"todos"`
+	}{Todos: user.Todos})
 }
